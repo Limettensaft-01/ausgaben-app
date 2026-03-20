@@ -16,6 +16,8 @@
     <button class="tab-btn" data-tab="posten">≡ Posten</button>
     <button class="tab-btn" data-tab="kalender">▦ Kalender</button>
     <button class="tab-btn" data-tab="rechner">⊞ Rechner</button>
+    <button class="tab-btn" data-tab="einkauf">🛒 Einkauf</button>
+    <button class="tab-btn" data-tab="einstellungen">⚙️ Einstellungen</button>
   </nav>
 
 <div id="bereich-erfassen">
@@ -54,6 +56,34 @@
   </form>
 </div>
 
+<div id="bereich-einkauf" class="tab-content" style="display:none;">
+  <h2>🛒 Einkaufsliste</h2>
+
+  <!-- Formular -->
+  <form id="einkauf-form">
+    <label>Name:</label>
+    <input type="text" id="einkauf-name" placeholder="z.B. Milch">
+
+    <label>Betrag in €:</label>
+    <input type="number" id="einkauf-betrag" placeholder="z.B. 2.50" step="0.01">
+
+    <label>Datum (geplant):</label>
+    <input type="date" id="einkauf-datum">
+
+    <button type="submit">Artikel hinzufügen</button>
+  </form>
+
+  <!-- Statistiken -->
+  <div id="einkauf-statistik" style="margin: 20px 0;">
+    <p>Geplant: <strong id="einkauf-geplant">0.00€</strong></p>
+    <p>Getätigt (diesen Monat): <strong id="einkauf-getatigt">0.00€</strong></p>
+  </div>
+
+  <!-- Liste -->
+  <ul id="einkauf-liste"></ul>
+</div>
+
+
 <div id="bereich-rechner">
   <h2>Kostenrechner</h2>
   <div id="rechner">
@@ -70,6 +100,24 @@
 
     <button type="button" id="rechner-btn">Berechnen</button>
     <div id="rechner-ergebnis"></div>
+  </div>
+</div>
+
+<div id="bereich-einstellungen" class="tab-content" style="display:none;">
+  <h2>Datensicherung</h2>
+  <div class="backup-section">
+    <p>Sichere deine Daten als JSON-Datei oder stelle ein Backup wieder her.</p>
+
+    <button id="backup-export-btn">💾 Backup herunterladen</button>
+    <button id="backup-import-btn">📂 Backup wiederherstellen</button>
+
+    <p class="warning">⚠️ Import überschreibt alle aktuellen Daten!</p>
+  </div>
+
+  <div class="info-section">
+    <h3>ℹ️ Informationen</h3>
+    <p>Daten werden lokal im Browser gespeichert (localStorage).</p>
+    <p>Regelmäßige Backups empfohlen!</p>
   </div>
 </div>
 

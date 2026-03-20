@@ -180,7 +180,23 @@ function berechneGesamtsumme() {
     let ausgaben = 0;
     let einnahmen = 0;
 
+    // ✅ NEU: Getätigte Einkäufe dieses Monats
+    let einkaufAusgaben = 0;
+    const heute = new Date();
+    const aktuellerMonat = heute.getMonth();
+    const aktuellesJahr = heute.getFullYear();
+
     posten.forEach(function (p) {
+        // ✅ NEU: Einkäufe separat tracken
+        if (p.typ === "einkauf" && p.abgehakt && p.abgehaktDatum) {
+            const abgehaktDatum = new Date(p.abgehaktDatum);
+            if (abgehaktDatum.getMonth() === aktuellerMonat && abgehaktDatum.getFullYear() === aktuellesJahr) {
+                einkaufAusgaben += parseFloat(p.betrag);
+                return; // Weiter zum nächsten Posten
+            }
+        }
+
+        // Normale Ausgaben/Einnahmen (wie bisher)
         const betrag = parseFloat(p.betrag);
         let monatlich = 0;
 
@@ -198,18 +214,16 @@ function berechneGesamtsumme() {
 
         if (p.typ === "einnahme") {
             einnahmen += monatlich;
-        } else {
+        } else if (p.typ === "ausgabe") {
             ausgaben += monatlich;
         }
     });
 
-    const bilanz = einnahmen - ausgaben;
+    const bilanz = einnahmen - (ausgaben + einkaufAusgaben);
     const anzeige = document.getElementById("gesamtsumme");
 
-    // ✅ Leeren und neu aufbauen
     anzeige.innerHTML = "";
 
-    // Hilfsfunktion für Spans mit Stil
     function createSpan(text, color, fontWeight = "normal") {
         const span = document.createElement("span");
         span.style.color = color;
@@ -218,12 +232,14 @@ function berechneGesamtsumme() {
         return span;
     }
 
-    // ✅ Echte Leerzeichen statt &nbsp;
+    // ✅ NEU: Einkaufsausgaben separat anzeigen
     anzeige.appendChild(createSpan(`Einnahmen: ${einnahmen.toFixed(2)}€ (monatlich)`, "#81c784"));
     anzeige.appendChild(document.createTextNode(" | "));
     anzeige.appendChild(createSpan(`Ausgaben: ${ausgaben.toFixed(2)}€ (monatlich)`, "#e74c3c"));
     anzeige.appendChild(document.createTextNode(" | "));
-    anzeige.appendChild(createSpan(`Bilanz: ${bilanz >= 0 ? '+' : ''}${bilanz.toFixed(2)}€ (monatlich)`, bilanz >= 0 ? "#81c784" : "#e74c3c", "bold"));
+    anzeige.appendChild(createSpan(`Einkäufe: ${einkaufAusgaben.toFixed(2)}€ (diesen Monat)`, "#e74c3c"));
+    anzeige.appendChild(document.createTextNode(" | "));
+    anzeige.appendChild(createSpan(`Bilanz: ${bilanz >= 0 ? '+' : ''}${bilanz.toFixed(2)}€`, bilanz >= 0 ? "#81c784" : "#e74c3c", "bold"));
 }
 
 document.getElementById("rechner-btn").addEventListener("click", function () {
@@ -481,12 +497,216 @@ document.getElementById("csv-export-btn").addEventListener("click", function () 
     link.click();
 });
 
+// ============================================
+// BACKUP EXPORT & IMPORT
+// ============================================
+
+// Backup herunterladen (JSON)
+document.getElementById("backup-export-btn").addEventListener("click", function () {
+    const backup = {
+        version: "1.0",
+        exportDate: new Date().toISOString(),
+        posten: posten
+    };
+
+    const json = JSON.stringify(backup, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `budget-backup-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+
+    // Cleanup
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+});
+
+// Backup wiederherstellen (JSON)
+document.getElementById("backup-import-btn").addEventListener("click", function () {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+
+    input.onchange = function (event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            try {
+                const backup = JSON.parse(e.target.result);
+
+                // Validierung
+                if (!backup.posten || !Array.isArray(backup.posten)) {
+                    alert("❌ Ungültiges Backup-Format!");
+                    return;
+                }
+
+                // Bestätigung
+                const count = backup.posten.length;
+                if (confirm(`📥 ${count} Einträge importieren?\n\n⚠️ Aktuelle Daten werden überschrieben!`)) {
+                    posten = backup.posten;
+                    localStorage.setItem("posten", JSON.stringify(posten));
+
+                    // UI aktualisieren
+                    liste.innerHTML = "";
+                    sortierePosten();
+                    posten.forEach((p, i) => zeigePosten(p, i));
+                    berechneGesamtsumme();
+
+                    alert("✅ Backup erfolgreich importiert!");
+                }
+            } catch (error) {
+                alert("❌ Fehler beim Lesen der Datei:\n" + error.message);
+            }
+        };
+
+        reader.readAsText(file);
+    };
+
+    input.click();
+});
+
+
+// ============================================
+// EINKAUFLISTE
+// ============================================
+
+// Einkauf hinzufügen
+document.getElementById("einkauf-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    const neuerEinkauf = {
+        typ: "einkauf",
+        name: document.getElementById("einkauf-name").value,
+        betrag: document.getElementById("einkauf-betrag").value,
+        datum: document.getElementById("einkauf-datum").value,
+        abgehakt: false,
+        abgehaktDatum: null
+    };
+
+    posten.push(neuerEinkauf);
+    localStorage.setItem("posten", JSON.stringify(posten));
+    zeigeEinkaufListe();
+    berechneEinkaufStatistik();
+    berechneGesamtsumme(); // Monatsbilanz aktualisieren
+    document.getElementById("einkauf-form").reset();
+});
+
+// Einkaufsliste anzeigen
+function zeigeEinkaufListe() {
+    const liste = document.getElementById("einkauf-liste");
+    liste.innerHTML = "";
+
+    const einkaufen = posten.filter(p => p.typ === "einkauf");
+
+    // Sortieren: zuerst ungehäckt, dann nach Datum
+    einkaufen.sort((a, b) => {
+        if (a.abgehakt !== b.abgehakt) return a.abgehakt ? 1 : -1;
+        return new Date(a.datum || 0) - new Date(b.datum || 0);
+    });
+
+    if (einkaufen.length === 0) {
+        liste.innerHTML = "<li style='text-align:center;color:#666;'>Noch keine Artikel in der Einkaufsliste</li>";
+        return;
+    }
+
+    einkaufen.forEach((p, index) => {
+        const eintrag = document.createElement("li");
+        eintrag.className = p.abgehakt ? "einkauf-abgehakt" : "einkauf-offen";
+
+        // Checkbox
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = p.abgehakt;
+        checkbox.addEventListener("change", function () {
+            p.abgehakt = this.checked;
+            p.abgehaktDatum = this.checked ? new Date().toISOString().split('T')[0] : null;
+            localStorage.setItem("posten", JSON.stringify(posten));
+            zeigeEinkaufListe();
+            berechneEinkaufStatistik();
+            berechneGesamtsumme(); // Monatsbilanz aktualisieren
+        });
+        eintrag.appendChild(checkbox);
+
+        // Name
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "einkauf-name";
+        nameSpan.textContent = p.name;
+        eintrag.appendChild(nameSpan);
+
+        // Betrag
+        const betragSpan = document.createElement("span");
+        betragSpan.className = "einkauf-betrag";
+        betragSpan.textContent = p.betrag + "€";
+        eintrag.appendChild(betragSpan);
+
+        // Datum
+        const datumSpan = document.createElement("span");
+        datumSpan.className = "einkauf-datum";
+        datumSpan.textContent = p.datum ? `(${p.datum})` : "";
+        eintrag.appendChild(datumSpan);
+
+        // Abgehakt-Datum anzeigen
+        if (p.abgehakt && p.abgehaktDatum) {
+            const abgehaktSpan = document.createElement("span");
+            abgehaktSpan.className = "einkauf-abgehakt-datum";
+            abgehaktSpan.textContent = ` [abgehakt: ${p.abgehaktDatum}]`;
+            eintrag.appendChild(abgehaktSpan);
+        }
+
+        // Löschen-Button
+        const loeschenBtn = document.createElement("button");
+        loeschenBtn.textContent = "✕";
+        loeschenBtn.className = "loeschen";
+        loeschenBtn.onclick = function () {
+            posten.splice(posten.indexOf(p), 1);
+            localStorage.setItem("posten", JSON.stringify(posten));
+            zeigeEinkaufListe();
+            berechneEinkaufStatistik();
+            berechneGesamtsumme();
+        };
+        eintrag.appendChild(loeschenBtn);
+
+        liste.appendChild(eintrag);
+    });
+}
+
+// Statistik berechnen
+function berechneEinkaufStatistik() {
+    const einkaufen = posten.filter(p => p.typ === "einkauf");
+
+    let geplant = 0;
+    let getatigt = 0;
+
+    const heute = new Date();
+    const aktuellerMonat = heute.getMonth();
+    const aktuellesJahr = heute.getFullYear();
+
+    einkaufen.forEach(p => {
+        if (p.abgehakt && p.abgehaktDatum) {
+            const abgehaktDatum = new Date(p.abgehaktDatum);
+            if (abgehaktDatum.getMonth() === aktuellerMonat && abgehaktDatum.getFullYear() === aktuellesJahr) {
+                getatigt += parseFloat(p.betrag);
+            }
+        } else {
+            geplant += parseFloat(p.betrag);
+        }
+    });
+
+    document.getElementById("einkauf-geplant").textContent = geplant.toFixed(2) + "€";
+    document.getElementById("einkauf-getatigt").textContent = getatigt.toFixed(2) + "€";
+}
+
 const tabBtns = document.querySelectorAll(".tab-btn");
 const bereiche = {
     erfassen: document.getElementById("bereich-erfassen"),
     posten: document.getElementById("bereich-posten"),
     kalender: document.getElementById("bereich-kalender"),
-    rechner: document.getElementById("bereich-rechner")
+    rechner: document.getElementById("bereich-rechner"),
+    einkauf: document.getElementById("bereich-einkauf"), // ✅ NEU
+    einstellungen: document.getElementById("bereich-einstellungen")
 };
 
 tabBtns.forEach(function (btn) {
@@ -501,6 +721,7 @@ tabBtns.forEach(function (btn) {
             bereiche[ziel].style.display = "block";
 
             if (ziel === "kalender") bautKalender();
+            if (ziel === "einkauf") zeigeEinkaufListe(); // ✅ NEU
         }
     });
 });

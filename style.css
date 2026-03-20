@@ -247,6 +247,13 @@ li.ausgabe-eintrag {
     display: none;
 }
 
+.trennlinie {
+    border: none;
+    height: 2px;
+    background: linear-gradient(to right, #81c784, #e74c3c);
+    margin: 15px 0;
+}
+
 /* Mobile-Ansicht */
 @media (max-width: 600px) {
     body {

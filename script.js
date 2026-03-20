@@ -27,9 +27,18 @@ intervallSelect.addEventListener("change", function () {
     }
 });
 
+// Sortierfunktion: Einnahmen zuerst, dann Ausgaben
+function sortierePosten() {
+    return posten.sort((a, b) => {
+        if (a.typ === "einnahme" && b.typ === "ausgabe") return -1;
+        if (a.typ === "ausgabe" && b.typ === "einnahme") return 1;
+        return 0;
+    });
+}
 
 // Beim Laden der Seite: gespeicherte Posten anzeigen
 let posten = JSON.parse(localStorage.getItem("posten")) || [];
+sortierePosten(); // ✅ HIER HINZUFÜGEN
 posten.forEach((p, i) => zeigePosten(p, i));
 berechneGesamtsumme();
 
@@ -46,8 +55,10 @@ form.addEventListener("submit", function (event) {
     };
 
     posten.push(neuerPosten);
+    sortierePosten(); // ✅ HIER HINZUFÜGEN
     localStorage.setItem("posten", JSON.stringify(posten));
-    zeigePosten(neuerPosten, posten.length - 1);
+    liste.innerHTML = ""; // ✅ ALTE LISTE LEEREN
+    posten.forEach((p, i) => zeigePosten(p, i)); // ✅ NEU RENDERN
     berechneGesamtsumme();
     form.reset();
 });
@@ -103,14 +114,23 @@ function zeigePosten(p, index) {
     loeschenBtn.classList.add("loeschen");
     loeschenBtn.onclick = function () {
         posten.splice(index, 1);
+        sortierePosten(); // ✅ HIER HINZUFÜGEN
         localStorage.setItem("posten", JSON.stringify(posten));
-        liste.innerHTML = "";
-        posten.forEach((p, i) => zeigePosten(p, i));
+        liste.innerHTML = ""; // ✅ ALTE LISTE LEEREN
+        posten.forEach((p, i) => zeigePosten(p, i)); // ✅ NEU RENDERN
         berechneGesamtsumme();
     };
 
     eintrag.appendChild(loeschenBtn);
     liste.appendChild(eintrag);
+
+    // ✅ Trennlinie nach dem letzten Einnahmen-Eintrag
+    if (p.typ === "einnahme" && index < posten.length - 1 && posten[index + 1].typ === "ausgabe") {
+        const trenner = document.createElement("hr");
+        trenner.className = "trennlinie";
+        liste.appendChild(trenner);
+    }
+
 }
 
 function berechneNaechstesDatum(datum, intervall, anzahl) {
@@ -119,19 +139,41 @@ function berechneNaechstesDatum(datum, intervall, anzahl) {
     const d = new Date(datum);
     const heute = new Date();
 
-    while (d <= heute) {
+    // Schutz vor Endlosschleife: Maximal 100 Iterationen
+    let iterationen = 0;
+    const maxIterationen = 100;
+
+    while (d <= heute && iterationen < maxIterationen) {
+        iterationen++;
+
         if (intervall === "wöchentlich") {
             d.setDate(d.getDate() + 7);
         } else if (intervall === "monatlich") {
+            // Robuster: Tag speichern, Monat erhöhen, dann Tag wieder setzen
+            const tag = d.getDate();
             d.setMonth(d.getMonth() + 1);
+            // Falls der Tag im neuen Monat nicht existiert (31. Jan → 3. März),
+            // auf den letzten Tag des Monats korrigieren
+            if (d.getDate() !== tag) {
+                d.setDate(0); // Setzt auf letzten Tag des Vormonats
+            }
         } else if (intervall === "alle-x-monate") {
+            const tag = d.getDate();
             d.setMonth(d.getMonth() + parseInt(anzahl));
+            if (d.getDate() !== tag) {
+                d.setDate(0);
+            }
         } else if (intervall === "alle-x-jahre") {
+            const tag = d.getDate();
             d.setFullYear(d.getFullYear() + parseInt(anzahl));
+            // Bei Schaltjahren: 29. Feb → 28. Feb
+            if (d.getDate() !== tag) {
+                d.setDate(0);
+            }
         }
     }
 
-    return d.toLocaleDateString("de-DE");
+    return iterationen >= maxIterationen ? null : d.toLocaleDateString("de-DE");
 }
 
 function berechneGesamtsumme() {
@@ -150,6 +192,8 @@ function berechneGesamtsumme() {
             monatlich = betrag / parseFloat(p.anzahl);
         } else if (p.intervall === "alle-x-jahre") {
             monatlich = betrag / (parseFloat(p.anzahl) * 12);
+        } else {
+            monatlich = 0;
         }
 
         if (p.typ === "einnahme") {
@@ -162,8 +206,8 @@ function berechneGesamtsumme() {
     const bilanz = einnahmen - ausgaben;
     const anzeige = document.getElementById("gesamtsumme");
 
-    // ✅ Sicher: textContent statt innerHTML
-    anzeige.innerHTML = ""; // Erst leeren
+    // ✅ Leeren und neu aufbauen
+    anzeige.innerHTML = "";
 
     // Hilfsfunktion für Spans mit Stil
     function createSpan(text, color, fontWeight = "normal") {
@@ -174,22 +218,12 @@ function berechneGesamtsumme() {
         return span;
     }
 
-    // 1. Einnahmen
-    anzeige.appendChild(createSpan(`Einnahmen: ${einnahmen.toFixed(2)}€`, "#81c784"));
-
-    // Trenner
-    anzeige.appendChild(document.createTextNode(" &nbsp;|&nbsp; "));
-
-    // 2. Ausgaben
-    anzeige.appendChild(createSpan(`Ausgaben: ${ausgaben.toFixed(2)}€`, "#e74c3c"));
-
-    // Trenner
-    anzeige.appendChild(document.createTextNode(" &nbsp;|&nbsp; "));
-
-    // 3. Bilanz (Farbe dynamisch)
-    const bilanzColor = bilanz >= 0 ? "#81c784" : "#e74c3c";
-    const bilanzPrefix = bilanz >= 0 ? "+" : "";
-    anzeige.appendChild(createSpan(`Bilanz: ${bilanzPrefix}${bilanz.toFixed(2)}€`, bilanzColor, "bold"));
+    // ✅ Echte Leerzeichen statt &nbsp;
+    anzeige.appendChild(createSpan(`Einnahmen: ${einnahmen.toFixed(2)}€ (monatlich)`, "#81c784"));
+    anzeige.appendChild(document.createTextNode(" | "));
+    anzeige.appendChild(createSpan(`Ausgaben: ${ausgaben.toFixed(2)}€ (monatlich)`, "#e74c3c"));
+    anzeige.appendChild(document.createTextNode(" | "));
+    anzeige.appendChild(createSpan(`Bilanz: ${bilanz >= 0 ? '+' : ''}${bilanz.toFixed(2)}€ (monatlich)`, bilanz >= 0 ? "#81c784" : "#e74c3c", "bold"));
 }
 
 document.getElementById("rechner-btn").addEventListener("click", function () {
@@ -237,12 +271,28 @@ function alleFaelligkeitenImMonat(jahr, monat) {
     const faelligkeiten = {};
 
     posten.forEach(p => {
-        if (!p.datum || p.intervall === "einmalig") return;
+        if (!p.datum) return;
 
         const d = new Date(p.datum);
-        const ende = new Date(jahr, monat + 1, 0); // letzter Tag des Monats
+        const ende = new Date(jahr, monat + 1, 0);
 
-        while (d <= ende) {
+        // Einmalige Ausgaben
+        if (p.intervall === "einmalig") {
+            if (d.getFullYear() === jahr && d.getMonth() === monat) {
+                const key = d.getDate();
+                if (!faelligkeiten[key]) faelligkeiten[key] = [];
+                faelligkeiten[key].push(p);
+            }
+            return;
+        }
+
+        // Schutz vor Endlosschleife
+        let iterationen = 0;
+        const maxIterationen = 100;
+
+        while (d <= ende && iterationen < maxIterationen) {
+            iterationen++;
+
             if (d.getFullYear() === jahr && d.getMonth() === monat) {
                 const key = d.getDate();
                 if (!faelligkeiten[key]) faelligkeiten[key] = [];
@@ -252,11 +302,17 @@ function alleFaelligkeitenImMonat(jahr, monat) {
             if (p.intervall === "wöchentlich") {
                 d.setDate(d.getDate() + 7);
             } else if (p.intervall === "monatlich") {
+                const tag = d.getDate();
                 d.setMonth(d.getMonth() + 1);
+                if (d.getDate() !== tag) d.setDate(0);
             } else if (p.intervall === "alle-x-monate") {
+                const tag = d.getDate();
                 d.setMonth(d.getMonth() + parseInt(p.anzahl));
+                if (d.getDate() !== tag) d.setDate(0);
             } else if (p.intervall === "alle-x-jahre") {
+                const tag = d.getDate();
                 d.setFullYear(d.getFullYear() + parseInt(p.anzahl));
+                if (d.getDate() !== tag) d.setDate(0);
             } else {
                 break;
             }

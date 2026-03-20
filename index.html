@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="theme-color" content="#0067c0">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <title>Ausgaben App</title>
+</head>
+
+<body>
+  <h1>Meine Ausgaben</h1>
+  <form id="ausgaben-form">
+    <label>Typ:</label>
+    <select id="typ">
+      <option value="ausgabe">Ausgabe</option>
+      <option value="einnahme">Einnahme</option>
+    </select>
+
+    <label>Name des Postens:</label>
+    <input type="text" id="name" placeholder="z.B. Soderstream Flaschen">
+
+    <label>Betrag in €:</label>
+    <input type="number" id="betrag" placeholder="z.B. 30">
+
+    <label>Datum (Kauf oder Ablauf):</label>
+    <input type="date" id="datum">
+
+    <label>Wiederkehrend?</label>
+    <select id="intervall">
+      <option value="einmalig">Einmalig</option>
+      <option value="wöchentlich">Wöchentlich</option>
+      <option value="monatlich">Monatlich</option>
+      <option value="alle-x-monate">Alle X Monate</option>
+      <option value="alle-x-jahre">Alle X Jahre</option>
+    </select>
+
+    <div id="intervall-anzahl-container" style="display:none">
+      <label id="intervall-anzahl-label">Anzahl:</label>
+      <input type="number" id="intervall-anzahl" min="1" placeholder="z.B. 3">
+    </div>
+
+    <button type="submit">Posten hinzufügen</button>
+  </form>
+  <h2>Kostenrechner</h2>
+  <div id="rechner">
+    <label>Betrag in €:</label>
+    <input type="number" id="rechner-betrag" placeholder="z.B. 3">
+
+    <label>Wie oft?</label>
+    <select id="rechner-intervall">
+      <option value="täglich">Täglich</option>
+      <option value="werktags">Werktags (5x/Woche)</option>
+      <option value="wöchentlich">Wöchentlich</option>
+      <option value="monatlich">Monatlich</option>
+    </select>
+
+    <button type="button" id="rechner-btn">Berechnen</button>
+    <div id="rechner-ergebnis"></div>
+  </div>
+  <h2> Meine Posten</h2>
+  <p id="gesamtsumme"></p>
+  <button type="button" id="csv-export-btn">⬇ Als CSV exportieren</button>
+  <ul id="posten-liste"></ul>
+  <h2>Kalender</h2>
+  <div id="kalender-navigation">
+    <button type="button" id="kalender-zurueck">◀</button>
+    <span id="kalender-titel"></span>
+    <button type="button" id="kalender-vor">▶</button>
+  </div>
+  <div id="kalender"></div>
+  <div id="tag-detail" style="display:none">
+    <h3 id="tag-detail-titel"></h3>
+    <ul id="tag-detail-liste"></ul>
+    <button type="button" id="tag-detail-schliessen">Schließen</button>
+  </div>
+  <script src="script.js"></script>
+</body>
+
+</html>

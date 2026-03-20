@@ -1,0 +1,242 @@
+body {
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 0 20px;
+    background-color: #202020;
+    color: #e0e0e0;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+input,
+select {
+    padding: 8px;
+    font-size: 16px;
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    border: 1px solid #444;
+    border-radius: 4px;
+}
+
+button {
+    padding: 10px;
+    background-color: #0067c0;
+    color: white;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+button:hover {
+    background-color: #1a7fd4;
+}
+
+h1,
+h2 {
+    color: #0067c0;
+    font-weight: bold;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    background-color: #2d2d2d;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    border-radius: 4px;
+    border: 1px solid #444;
+    display: grid;
+    grid-template-columns: 180px 80px 120px 130px 1fr;
+    align-items: center;
+    gap: 8px;
+}
+
+li button.loeschen {
+    justify-self: end;
+}
+
+button.loeschen {
+    padding: 2px 7px;
+    background-color: #e74c3c;
+    font-size: 12px;
+    margin-left: 10px;
+}
+
+.tag {
+    background-color: #3a3a3a;
+    border: 1px solid #555;
+    border-radius: 12px;
+    padding: 3px 10px;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+.tag.betrag {
+    color: #4fc3f7;
+    border-color: #4fc3f7;
+    text-align: center;
+}
+
+.tag.intervall {
+    text-align: center;
+}
+
+.tag.faelligkeit {
+    color: #81c784;
+    border-color: #81c784;
+    text-align: center;
+}
+
+#rechner {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+    margin-bottom: 30px;
+}
+
+#rechner-ergebnis {
+    background-color: #2d2d2d;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 14px;
+    display: none;
+}
+
+#rechner-ergebnis .ergebnis-zeile {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px solid #3a3a3a;
+}
+
+#rechner-ergebnis .ergebnis-zeile:last-child {
+    border-bottom: none;
+    font-weight: bold;
+    color: #4fc3f7;
+}
+
+#kalender-navigation {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 10px;
+}
+
+#kalender-navigation button {
+    padding: 4px 12px;
+    font-size: 14px;
+    width: auto;
+}
+
+#kalender-titel {
+    font-weight: bold;
+    font-size: 18px;
+    color: #ffffff;
+}
+
+#kalender {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 30px;
+}
+
+.kalender-tag-name {
+    text-align: center;
+    font-size: 12px;
+    color: #888;
+    padding: 4px 0;
+}
+
+.kalender-tag {
+    background-color: #2d2d2d;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 6px;
+    min-height: 48px;
+    font-size: 13px;
+}
+
+.kalender-tag.leer {
+    background-color: transparent;
+    border-color: transparent;
+}
+
+.kalender-tag.heute {
+    border-color: #0067c0;
+}
+
+.kalender-tag.hat-faelligkeit {
+    background-color: #1a3a1a;
+    border-color: #81c784;
+}
+
+.kalender-tag .tag-nummer {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 2px;
+}
+
+.kalender-tag.heute .tag-nummer {
+    color: #0067c0;
+    font-weight: bold;
+}
+
+.kalender-faelligkeit {
+    font-size: 10px;
+    color: #81c784;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#tag-detail {
+    background-color: #2d2d2d;
+    border: 1px solid #0067c0;
+    border-radius: 4px;
+    padding: 16px;
+    margin-top: 10px;
+}
+
+#tag-detail ul {
+    padding: 0;
+    margin: 10px 0;
+}
+
+#tag-detail li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    background-color: #3a3a3a;
+    margin-bottom: 8px;
+    padding: 10px 14px;
+    border-radius: 4px;
+    border: 1px solid #444;
+}
+
+#tag-detail li button.kalender-hinzufuegen {
+    background-color: #0067c0;
+    padding: 4px 10px;
+    font-size: 12px;
+    width: auto;
+}
+
+li.einnahme-eintrag {
+    border-color: #81c784;
+}
+
+li.ausgabe-eintrag {
+    border-color: #444;
+}

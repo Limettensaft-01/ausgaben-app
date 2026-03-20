@@ -1,4 +1,4 @@
-const CACHE = "ausgaben-v1";
+const CACHE = "ausgaben-v2";
 const DATEIEN = ["index.html", "manifest.json"];
 
 self.addEventListener("install", function (e) {

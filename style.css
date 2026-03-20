@@ -240,3 +240,56 @@ li.einnahme-eintrag {
 li.ausgabe-eintrag {
     border-color: #444;
 }
+
+#tab-leiste {
+    display: none;
+}
+
+@media (max-width: 600px) {
+    body {
+        margin: 0;
+        padding: 0;
+        padding-bottom: 70px;
+    }
+
+    #tab-leiste {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: #2d2d2d;
+        border-top: 1px solid #444;
+        z-index: 100;
+    }
+
+    .tab-btn {
+        padding: 10px 4px;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        color: #888;
+        font-size: 11px;
+        border-top: 2px solid transparent;
+    }
+
+    .tab-btn.aktiv {
+        color: #4fc3f7;
+        border-top: 2px solid #4fc3f7;
+        background-color: #1a2a3a;
+    }
+
+    #bereich-rechner,
+    #bereich-posten,
+    #bereich-kalender {
+        display: none;
+    }
+
+    #bereich-erfassen,
+    #bereich-rechner,
+    #bereich-posten,
+    #bereich-kalender {
+        padding: 16px;
+    }
+}

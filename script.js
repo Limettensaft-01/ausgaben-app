@@ -339,3 +339,27 @@ document.getElementById("csv-export-btn").addEventListener("click", function () 
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js");
 }
+
+const tabBtns = document.querySelectorAll(".tab-btn");
+const bereiche = {
+    erfassen: document.getElementById("bereich-erfassen"),
+    posten: document.getElementById("bereich-posten"),
+    kalender: document.getElementById("bereich-kalender"),
+    rechner: document.getElementById("bereich-rechner")
+};
+
+tabBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+        const ziel = btn.getAttribute("data-tab");
+
+        tabBtns.forEach(b => b.classList.remove("aktiv"));
+        btn.classList.add("aktiv");
+
+        if (window.innerWidth <= 600) {
+            Object.values(bereiche).forEach(b => b.style.display = "none");
+            bereiche[ziel].style.display = "block";
+
+            if (ziel === "kalender") bautKalender();
+        }
+    });
+});

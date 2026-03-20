@@ -10,6 +10,14 @@
 </head>
 
 <body>
+  <nav id="tab-leiste">
+    <button class="tab-btn aktiv" data-tab="erfassen">＋ Erfassen</button>
+    <button class="tab-btn" data-tab="posten">≡ Posten</button>
+    <button class="tab-btn" data-tab="kalender">▦ Kalender</button>
+    <button class="tab-btn" data-tab="rechner">⊞ Rechner</button>
+  </nav>
+
+<div id="bereich-erfassen">
   <h1>Meine Ausgaben</h1>
   <form id="ausgaben-form">
     <label>Typ:</label>
@@ -43,6 +51,9 @@
 
     <button type="submit">Posten hinzufügen</button>
   </form>
+</div>
+
+<div id="bereich-rechner">
   <h2>Kostenrechner</h2>
   <div id="rechner">
     <label>Betrag in €:</label>
@@ -59,10 +70,16 @@
     <button type="button" id="rechner-btn">Berechnen</button>
     <div id="rechner-ergebnis"></div>
   </div>
+</div>
+
+<div id="bereich-posten">
   <h2> Meine Posten</h2>
   <p id="gesamtsumme"></p>
   <button type="button" id="csv-export-btn">⬇ Als CSV exportieren</button>
   <ul id="posten-liste"></ul>
+</div>
+
+<div id="bereich-kalender">
   <h2>Kalender</h2>
   <div id="kalender-navigation">
     <button type="button" id="kalender-zurueck">◀</button>
@@ -75,6 +92,8 @@
     <ul id="tag-detail-liste"></ul>
     <button type="button" id="tag-detail-schliessen">Schließen</button>
   </div>
+</div>
+
   <script src="script.js"></script>
 </body>
 

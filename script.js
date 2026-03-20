@@ -1,3 +1,15 @@
+// XSS-Schutz: HTML-Escape für Benutzereingaben (Backup für Fälle wo innerHTML nötig ist)
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
 const form = document.getElementById("ausgaben-form");
 const liste = document.getElementById("posten-liste");
 const intervallSelect = document.getElementById("intervall");
@@ -53,13 +65,39 @@ function zeigePosten(p, index) {
     const eintrag = document.createElement("li");
     eintrag.classList.add(p.typ === "einnahme" ? "einnahme-eintrag" : "ausgabe-eintrag");
     const naechstesDatum = berechneNaechstesDatum(p.datum, p.intervall, p.anzahl);
-    eintrag.innerHTML = `
-        <span class="tag name">${p.name}</span>
-        <span class="tag betrag">${p.betrag}€</span>
-        <span class="tag intervall">${formatIntervall(p.intervall, p.anzahl)}</span>
-        ${naechstesDatum ? `<span class="tag faelligkeit">📅 ${naechstesDatum}</span>` : `<span class="tag" style="visibility:hidden"></span>`}
-    `;
 
+    // Name
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "tag name";
+    nameSpan.textContent = p.name; // ✅ Automatisch sicher!
+    eintrag.appendChild(nameSpan);
+
+    // Betrag
+    const betragSpan = document.createElement("span");
+    betragSpan.className = "tag betrag";
+    betragSpan.textContent = p.betrag + "€"; // ✅ Automatisch sicher!
+    eintrag.appendChild(betragSpan);
+
+    // Intervall
+    const intervallSpan = document.createElement("span");
+    intervallSpan.className = "tag intervall";
+    intervallSpan.textContent = formatIntervall(p.intervall, p.anzahl); // ✅ formatIntervall gibt nur feste Strings zurück
+    eintrag.appendChild(intervallSpan);
+
+    // Fälligkeit (optional)
+    if (naechstesDatum) {
+        const datumSpan = document.createElement("span");
+        datumSpan.className = "tag faelligkeit";
+        datumSpan.textContent = "📅 " + naechstesDatum; // ✅ Automatisch sicher!
+        eintrag.appendChild(datumSpan);
+    } else {
+        const placeholder = document.createElement("span");
+        placeholder.className = "tag";
+        placeholder.style.visibility = "hidden";
+        eintrag.appendChild(placeholder);
+    }
+
+    // Löschen-Button
     const loeschenBtn = document.createElement("button");
     loeschenBtn.textContent = "✕";
     loeschenBtn.classList.add("loeschen");
@@ -123,13 +161,35 @@ function berechneGesamtsumme() {
 
     const bilanz = einnahmen - ausgaben;
     const anzeige = document.getElementById("gesamtsumme");
-    anzeige.innerHTML = `
-    <span style="color: #81c784">Einnahmen: ${einnahmen.toFixed(2)}€</span> &nbsp;|&nbsp;
-    <span style="color: #e74c3c">Ausgaben: ${ausgaben.toFixed(2)}€</span> &nbsp;|&nbsp;
-    <span style="color: ${bilanz >= 0 ? '#81c784' : '#e74c3c'}; font-weight: bold">
-      Bilanz: ${bilanz >= 0 ? '+' : ''}${bilanz.toFixed(2)}€
-    </span>
-  `;
+
+    // ✅ Sicher: textContent statt innerHTML
+    anzeige.innerHTML = ""; // Erst leeren
+
+    // Hilfsfunktion für Spans mit Stil
+    function createSpan(text, color, fontWeight = "normal") {
+        const span = document.createElement("span");
+        span.style.color = color;
+        span.style.fontWeight = fontWeight;
+        span.textContent = text;
+        return span;
+    }
+
+    // 1. Einnahmen
+    anzeige.appendChild(createSpan(`Einnahmen: ${einnahmen.toFixed(2)}€`, "#81c784"));
+
+    // Trenner
+    anzeige.appendChild(document.createTextNode(" &nbsp;|&nbsp; "));
+
+    // 2. Ausgaben
+    anzeige.appendChild(createSpan(`Ausgaben: ${ausgaben.toFixed(2)}€`, "#e74c3c"));
+
+    // Trenner
+    anzeige.appendChild(document.createTextNode(" &nbsp;|&nbsp; "));
+
+    // 3. Bilanz (Farbe dynamisch)
+    const bilanzColor = bilanz >= 0 ? "#81c784" : "#e74c3c";
+    const bilanzPrefix = bilanz >= 0 ? "+" : "";
+    anzeige.appendChild(createSpan(`Bilanz: ${bilanzPrefix}${bilanz.toFixed(2)}€`, bilanzColor, "bold"));
 }
 
 document.getElementById("rechner-btn").addEventListener("click", function () {
@@ -283,12 +343,25 @@ function zeigeTagDetail(tag, monat, jahr, posten) {
 
     posten.forEach(p => {
         const eintrag = document.createElement("li");
-        eintrag.innerHTML = `
-      <span>${p.name} — ${p.betrag}€ — ${formatIntervall(p.intervall, p.anzahl)}</span>
-      <button class="kalender-hinzufuegen" onclick="zuGoogleKalender('${p.name}', '${p.betrag}', '${jahr}-${String(monat + 1).padStart(2, '0')}-${String(tag).padStart(2, '0')}')">
-        📅 Google Calendar
-      </button>
-    `;
+
+        // Text-Teil mit textContent
+        const textSpan = document.createElement("span");
+        textSpan.textContent = p.name + " — " + p.betrag + "€ — " + formatIntervall(p.intervall, p.anzahl);
+        eintrag.appendChild(textSpan);
+
+        // Button mit onclick (hier müssen wir die Parameter escapen für das Attribut)
+        const button = document.createElement("button");
+        button.className = "kalender-hinzufuegen";
+        button.textContent = "📅 Google Calendar";
+
+        // ✅ Parameter escapen für das onclick-Attribut
+        const safeName = escapeHtml(p.name);
+        const safeBetrag = escapeHtml(p.betrag);
+        const safeDatum = `${jahr}-${String(monat + 1).padStart(2, '0')}-${String(tag).padStart(2, '0')}`;
+
+        button.setAttribute("onclick", `zuGoogleKalender('${safeName}', '${safeBetrag}', '${safeDatum}')`);
+        eintrag.appendChild(button);
+
         liste.appendChild(eintrag);
     });
 
@@ -300,10 +373,13 @@ document.getElementById("tag-detail-schliessen").addEventListener("click", funct
 });
 
 function zuGoogleKalender(name, betrag, datum) {
+    // ✅ Parameter nochmal escapen, bevor sie in die URL kommen
+    const safeName = encodeURIComponent(name);
+    const safeBetrag = encodeURIComponent(betrag);
     const start = datum.replace(/-/g, "");
     const end = datum.replace(/-/g, "");
-    const titel = encodeURIComponent(name + " — " + betrag + "€");
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titel}&dates=${start}/${end}`;
+    const titel = safeName + " — " + safeBetrag + "€";
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(titel)}&dates=${start}/${end}`;
     window.open(url, "_blank");
 }
 
@@ -324,10 +400,23 @@ document.getElementById("csv-export-btn").addEventListener("click", function () 
 
     posten.forEach(function (p) {
         const typ = p.typ === "einnahme" ? "Einnahme" : "Ausgabe";
-        csv += `${typ};${p.name};${p.betrag}€;${p.datum};${formatIntervall(p.intervall, p.anzahl)}\n`;
+
+        // ✅ CSV-Injection Schutz: Prüfen, ob Name mit =, +, -, @ beginnt
+        let safeName = p.name;
+        if (p.name.startsWith('=') || p.name.startsWith('+') || p.name.startsWith('-') || p.name.startsWith('@')) {
+            safeName = "'" + p.name; // Apostroph zwingt Excel, es als Text zu behandeln
+        }
+
+        // Auch den Betrag sicher machen (falls jemand dort Formeln eingibt)
+        let safeBetrag = p.betrag;
+        if (p.betrag.startsWith('=') || p.betrag.startsWith('+') || p.betrag.startsWith('-') || p.betrag.startsWith('@')) {
+            safeBetrag = "'" + p.betrag;
+        }
+
+        csv += `${typ};${safeName};${safeBetrag}€;${p.datum};${formatIntervall(p.intervall, p.anzahl)}\n`;
     });
 
-    const bom = "\uFEFF"; // UTF-8 BOM damit Excel Umlaute richtig liest
+    const bom = "\uFEFF";
     const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -335,10 +424,6 @@ document.getElementById("csv-export-btn").addEventListener("click", function () 
     link.download = "ausgaben.csv";
     link.click();
 });
-
-if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js");
-}
 
 const tabBtns = document.querySelectorAll(".tab-btn");
 const bereiche = {
@@ -363,3 +448,4 @@ tabBtns.forEach(function (btn) {
         }
     });
 });
+

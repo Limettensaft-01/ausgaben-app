@@ -1,3 +1,4 @@
+/* Standard-Desktop-Stil */
 body {
     font-family: Arial, sans-serif;
     max-width: 600px;
@@ -150,7 +151,7 @@ button.loeschen {
 #kalender {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
+    gap: 2px;
     margin-bottom: 30px;
 }
 
@@ -168,6 +169,7 @@ button.loeschen {
     padding: 6px;
     min-height: 48px;
     font-size: 13px;
+    overflow: hidden;
 }
 
 .kalender-tag.leer {
@@ -245,11 +247,17 @@ li.ausgabe-eintrag {
     display: none;
 }
 
+/* Mobile-Ansicht */
 @media (max-width: 600px) {
     body {
+        font-size: 14px;
         margin: 0;
         padding: 0;
         padding-bottom: 70px;
+    }
+
+    h1, h2 {
+        font-size: 20px;
     }
 
     #tab-leiste {
@@ -262,6 +270,21 @@ li.ausgabe-eintrag {
         background-color: #2d2d2d;
         border-top: 1px solid #444;
         z-index: 100;
+    }
+
+    li {
+        display: grid;
+        grid-template-columns: 90px 50px 60px 70px 17px; /* Kleinere Spaltenbreiten */
+        align-items: center;
+        gap: 4px; /* Weniger Abstand zwischen den Spalten */
+        padding: 6px 2px; /* Weniger Innenabstand */
+        font-size: 12px; /* Kleinere Schriftgröße */
+        
+    }
+
+    .tag {
+        font-size: 10px;
+        padding: 2px 6px;
     }
 
     .tab-btn {
@@ -292,4 +315,26 @@ li.ausgabe-eintrag {
     #bereich-kalender {
         padding: 16px;
     }
+
+    .posten-container {
+        overflow-x: auto; /* Horizontale Scrollleiste bei Bedarf */
+        max-width: 100%;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .posten-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .posten-item button {
+        width: 100%;
+        margin-top: 5px;
+    }
+
+    button.loeschen {
+        padding: 2px 4px;
+        font-size: 10px;
+    }
+
 }

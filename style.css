@@ -528,10 +528,12 @@ li.einkauf-eintrag {
     z-index: 201;
     transition: bottom 0.3s ease;
     padding-bottom: 80px;
+    visibility: hidden;
 }
 
 #detail-panel.offen {
     bottom: 0;
+    visibility: visible;
 }
 
 #detail-handle {

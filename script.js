@@ -156,17 +156,17 @@ function zeigePosten(p, index) {
 
 function formatKategorie(kategorie) {
     const kategorien = {
-        wohnen: "🏠 Wohnen",
-        essen: "🍔 Essen",
-        transport: "🚗 Transport",
-        freizeit: "🎮 Freizeit",
-        gesundheit: "💊 Gesundheit",
-        kleidung: "👕 Kleidung",
-        technik: "📱 Technik",
-        einnahme: "💰 Einnahme",
-        sonstiges: "📦 Sonstiges"
+        wohnen: "🏠",
+        essen: "🍔",
+        transport: "🚗",
+        freizeit: "🎮",
+        gesundheit: "💊",
+        kleidung: "👕",
+        technik: "📱",
+        einnahme: "💰",
+        sonstiges: "📦"
     };
-    return kategorien[kategorie] || "📦 Sonstiges";
+    return kategorien[kategorie] || "📦";
 }
 
 function berechneNaechstesDatum(datum, intervall, anzahl) {

@@ -66,7 +66,7 @@ li {
     border-radius: 4px;
     border: 1px solid #444;
     display: grid;
-    grid-template-columns: 160px 70px 110px 100px 110px 1fr;
+    grid-template-columns: 160px 70px 110px 40px 110px 1fr;
     align-items: center;
     gap: 8px;
 }
@@ -533,7 +533,7 @@ li.einkauf-eintrag {
 
     li {
         display: grid;
-        grid-template-columns: 80px 45px 55px 60px 55px 17px; /* Kleinere Spaltenbreiten */
+        grid-template-columns: 80px 45px 60px 28px 65px 17px; /* Kleinere Spaltenbreiten */
         align-items: center;
         gap: 4px; /* Weniger Abstand zwischen den Spalten */
         padding: 6px 2px; /* Weniger Innenabstand */

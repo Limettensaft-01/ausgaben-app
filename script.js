@@ -54,6 +54,7 @@ form.addEventListener("submit", function (event) {
 
     const neuerPosten = {
         typ: document.getElementById("typ").value,
+        kategorie: document.getElementById("kategorie").value,
         name: document.getElementById("name").value,
         betrag: document.getElementById("betrag").value,
         datum: document.getElementById("datum").value,
@@ -104,6 +105,11 @@ function zeigePosten(p, index) {
     intervallSpan.textContent = p.vonEinkauf ? "🛒 Einkauf" : formatIntervall(p.intervall, p.anzahl);
     einkaufEintrag.appendChild(intervallSpan);
 
+    const kategorieSpan = document.createElement("span");
+    kategorieSpan.className = "tag kategorie";
+    kategorieSpan.textContent = formatKategorie(p.kategorie);
+    einkaufEintrag.appendChild(kategorieSpan);
+
     // Fälligkeit (optional)
     if (p.intervall === "einmalig" && p.datum) {
         const datumSpan = document.createElement("span");
@@ -146,6 +152,21 @@ function zeigePosten(p, index) {
         liste.appendChild(trenner);
     }
 
+}
+
+function formatKategorie(kategorie) {
+    const kategorien = {
+        wohnen: "🏠 Wohnen",
+        essen: "🍔 Essen",
+        transport: "🚗 Transport",
+        freizeit: "🎮 Freizeit",
+        gesundheit: "💊 Gesundheit",
+        kleidung: "👕 Kleidung",
+        technik: "📱 Technik",
+        einnahme: "💰 Einnahme",
+        sonstiges: "📦 Sonstiges"
+    };
+    return kategorien[kategorie] || "📦 Sonstiges";
 }
 
 function berechneNaechstesDatum(datum, intervall, anzahl) {

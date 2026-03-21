@@ -8,6 +8,12 @@ self.addEventListener('activate', function (e) {
             return Promise.all(keys.map(function (key) {
                 return caches.delete(key);
             }));
+        }).then(function () {
+            return self.clients.claim();
         })
     );
+});
+
+self.addEventListener('fetch', function (e) {
+    e.respondWith(fetch(e.request));
 });

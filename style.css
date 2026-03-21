@@ -504,6 +504,75 @@ li.einkauf-eintrag {
     text-align: center;
 }
 
+/* Detail Panel bei den Posten */
+
+#detail-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 200;
+}
+
+#detail-panel {
+    position: fixed;
+    bottom: -100%;
+    left: 0;
+    right: 0;
+    background: #2d2d2d;
+    border-radius: 16px 16px 0 0;
+    border-top: 1px solid #0067c0;
+    padding: 16px;
+    z-index: 201;
+    transition: bottom 0.3s ease;
+    padding-bottom: 80px;
+}
+
+#detail-panel.offen {
+    bottom: 0;
+}
+
+#detail-handle {
+    width: 32px;
+    height: 4px;
+    background: #555;
+    border-radius: 2px;
+    margin: 0 auto 16px;
+}
+
+#detail-name {
+    color: #4fc3f7;
+    margin: 0 0 16px;
+    font-size: 18px;
+}
+
+#detail-inhalt {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.detail-karte {
+    background: #3a3a3a;
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+.detail-karte-label {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 4px;
+}
+
+.detail-karte-wert {
+    font-size: 14px;
+    color: #e0e0e0;
+}
+
+
 /* Mobile-Ansicht */
 @media (max-width: 600px) {
     body {

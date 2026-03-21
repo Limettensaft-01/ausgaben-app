@@ -83,6 +83,13 @@ function formatIntervall(intervall, anzahl) {
 function zeigePosten(p, index) {
     if (p.typ === "einkauf") return; // Einkäufe nicht in der Postenliste anzeigen
     const einkaufEintrag = document.createElement("li");
+
+    einkaufEintrag.style.cursor = "pointer";
+    einkaufEintrag.addEventListener("click", function (e) {
+        if (e.target.classList.contains("loeschen")) return;
+        zeigeDetail(p);
+    });
+
     if (p.vonEinkauf) einkaufEintrag.classList.add("einkauf-eintrag");
     einkaufEintrag.classList.add(p.typ === "einnahme" ? "einnahme-eintrag" : "ausgabe-eintrag");
     const naechstesDatum = berechneNaechstesDatum(p.datum, p.intervall, p.anzahl);
@@ -115,12 +122,14 @@ function zeigePosten(p, index) {
         const datumSpan = document.createElement("span");
         datumSpan.className = "tag einmalig-datum";
         const d = new Date(p.datum);
-        datumSpan.textContent = "📌 " + d.toLocaleDateString("de-DE");
+        const istMobil2 = window.innerWidth <= 600;
+        datumSpan.textContent = "📌 " + (istMobil2 ? d.toLocaleDateString("de-DE", { day: "numeric", month: "numeric" }) : d.toLocaleDateString("de-DE"));
         einkaufEintrag.appendChild(datumSpan);
     } else if (naechstesDatum) {
         const datumSpan = document.createElement("span");
         datumSpan.className = "tag faelligkeit";
-        datumSpan.textContent = "📅 " + naechstesDatum;
+        const istMobil = window.innerWidth <= 600;
+        datumSpan.textContent = "📅 " + (istMobil ? naechstesDatum.split('.').slice(0, 2).join('.') + '.' : naechstesDatum);
         einkaufEintrag.appendChild(datumSpan);
     } else {
         const placeholder = document.createElement("span");
@@ -817,3 +826,54 @@ window.addEventListener("load", function () {
     bautKalender();
 });
 
+function zeigeDetail(p) {
+    document.getElementById("detail-name").textContent = p.name + " — " + p.betrag + "€";
+
+    const inhalt = document.getElementById("detail-inhalt");
+    inhalt.innerHTML = "";
+
+    const felder = [
+        { label: "Typ", wert: p.typ === "einnahme" ? "💰 Einnahme" : "💸 Ausgabe" },
+        { label: "Betrag", wert: p.betrag + "€" },
+        { label: "Kategorie", wert: formatKategorie(p.kategorie) + " " + formatKategorieName(p.kategorie) },
+        { label: "Intervall", wert: p.vonEinkauf ? "🛒 Einkauf" : formatIntervall(p.intervall, p.anzahl) },
+        { label: "Datum", wert: p.datum ? new Date(p.datum).toLocaleDateString("de-DE") : "—" },
+        { label: "Nächste Fälligkeit", wert: berechneNaechstesDatum(p.datum, p.intervall, p.anzahl) || "—" }
+    ];
+
+    felder.forEach(f => {
+        const karte = document.createElement("div");
+        karte.className = "detail-karte";
+        karte.innerHTML = `
+      <div class="detail-karte-label">${f.label}</div>
+      <div class="detail-karte-wert">${f.wert}</div>
+    `;
+        inhalt.appendChild(karte);
+    });
+
+    document.getElementById("detail-overlay").style.display = "block";
+    document.getElementById("detail-panel").classList.add("offen");
+}
+
+function schliesseDetail() {
+    document.getElementById("detail-overlay").style.display = "none";
+    document.getElementById("detail-panel").classList.remove("offen");
+}
+
+document.getElementById("detail-schliessen").addEventListener("click", schliesseDetail);
+document.getElementById("detail-overlay").addEventListener("click", schliesseDetail);
+
+function formatKategorieName(kategorie) {
+    const kategorien = {
+        wohnen: "Wohnen",
+        essen: "Essen & Trinken",
+        transport: "Transport",
+        freizeit: "Freizeit",
+        gesundheit: "Gesundheit",
+        kleidung: "Kleidung",
+        technik: "Technik",
+        einnahme: "Einnahme",
+        sonstiges: "Sonstiges"
+    };
+    return kategorien[kategorie] || "Sonstiges";
+}

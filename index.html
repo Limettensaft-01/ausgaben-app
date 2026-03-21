@@ -67,8 +67,8 @@
     <label>Betrag in €:</label>
     <input type="number" id="einkauf-betrag" placeholder="z.B. 2.50" step="0.01">
 
-    <label>Datum (geplant):</label>
-    <input type="date" id="einkauf-datum">
+    <label>Notiz (optional):</label>
+    <input type="text" id="einkauf-notiz" placeholder="z.B. Bio, 2 Stück, https://...">
 
     <button type="submit">Artikel hinzufügen</button>
   </form>
@@ -123,7 +123,72 @@
 
 <div id="bereich-posten">
   <h2> Meine Posten</h2>
-  <p id="gesamtsumme"></p>
+<div id="bilanz-auswahl">
+  <select id="bilanz-monat">
+    <option value="0">Januar</option>
+    <option value="1">Februar</option>
+    <option value="2">März</option>
+    <option value="3">April</option>
+    <option value="4">Mai</option>
+    <option value="5">Juni</option>
+    <option value="6">Juli</option>
+    <option value="7">August</option>
+    <option value="8">September</option>
+    <option value="9">Oktober</option>
+    <option value="10">November</option>
+    <option value="11">Dezember</option>
+  </select>
+  <select id="bilanz-jahr">
+  </select>
+</div>
+
+<div id="gesamtsumme">
+  <div class="bilanz-sektion">
+    <p class="bilanz-sektion-titel">Monatsübersicht</p>
+    <div class="bilanz-karten-reihe">
+      <div class="bilanz-karte einnahmen">
+        <span class="bilanz-label">Einnahmen</span>
+        <span class="bilanz-wert" id="bilanz-einnahmen">0.00€</span>
+      </div>
+      <div class="bilanz-karte ausgaben">
+        <span class="bilanz-label">Ausgaben</span>
+        <span class="bilanz-wert" id="bilanz-ausgaben">0.00€</span>
+      </div>
+      <div class="bilanz-karte bilanz">
+        <span class="bilanz-label">Bilanz</span>
+        <span class="bilanz-wert" id="bilanz-gesamt">+0.00€</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bilanz-sektion">
+    <p class="bilanz-sektion-titel">Jahresübersicht</p>
+    <div class="bilanz-karten-reihe">
+      <div class="bilanz-karte einnahmen">
+        <span class="bilanz-label">Einnahmen</span>
+        <span class="bilanz-wert" id="bilanz-jahr-einnahmen">0.00€</span>
+      </div>
+      <div class="bilanz-karte ausgaben">
+        <span class="bilanz-label">Ausgaben</span>
+        <span class="bilanz-wert" id="bilanz-jahr-ausgaben">0.00€</span>
+      </div>
+      <div class="bilanz-karte bilanz">
+        <span class="bilanz-label">Bilanz</span>
+        <span class="bilanz-wert" id="bilanz-jahr-gesamt">+0.00€</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bilanz-sektion">
+    <p class="bilanz-sektion-titel">Einkäufe diesen Monat</p>
+    <div class="bilanz-karten-reihe">
+      <div class="bilanz-karte einkaufe">
+        <span class="bilanz-label">Getätigt</span>
+        <span class="bilanz-wert" id="bilanz-einkaufe">0.00€</span>
+      </div>
+    </div>
+  </div>
+</div>
   <button type="button" id="csv-export-btn">⬇ Als CSV exportieren</button>
   <ul id="posten-liste"></ul>
 </div>

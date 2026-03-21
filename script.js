@@ -40,7 +40,14 @@ function sortierePosten() {
 let posten = JSON.parse(localStorage.getItem("posten")) || [];
 sortierePosten(); // ✅ HIER HINZUFÜGEN
 posten.forEach((p, i) => zeigePosten(p, i));
-berechneGesamtsumme();
+window.addEventListener("load", function () {
+    document.getElementById("bilanz-monat").value = new Date().getMonth();
+    berechneGesamtsumme();
+    bautKalender();
+    zeigeEinkaufListe();
+    berechneEinkaufStatistik();
+});
+
 
 form.addEventListener("submit", function (event) {
     event.preventDefault();
@@ -73,39 +80,47 @@ function formatIntervall(intervall, anzahl) {
 }
 
 function zeigePosten(p, index) {
-    const eintrag = document.createElement("li");
-    eintrag.classList.add(p.typ === "einnahme" ? "einnahme-eintrag" : "ausgabe-eintrag");
+    if (p.typ === "einkauf") return; // Einkäufe nicht in der Postenliste anzeigen
+    const einkaufEintrag = document.createElement("li");
+    if (p.vonEinkauf) einkaufEintrag.classList.add("einkauf-eintrag");
+    einkaufEintrag.classList.add(p.typ === "einnahme" ? "einnahme-eintrag" : "ausgabe-eintrag");
     const naechstesDatum = berechneNaechstesDatum(p.datum, p.intervall, p.anzahl);
 
     // Name
     const nameSpan = document.createElement("span");
     nameSpan.className = "tag name";
     nameSpan.textContent = p.name; // ✅ Automatisch sicher!
-    eintrag.appendChild(nameSpan);
+    einkaufEintrag.appendChild(nameSpan);
 
     // Betrag
     const betragSpan = document.createElement("span");
     betragSpan.className = "tag betrag";
     betragSpan.textContent = p.betrag + "€"; // ✅ Automatisch sicher!
-    eintrag.appendChild(betragSpan);
+    einkaufEintrag.appendChild(betragSpan);
 
     // Intervall
     const intervallSpan = document.createElement("span");
     intervallSpan.className = "tag intervall";
-    intervallSpan.textContent = formatIntervall(p.intervall, p.anzahl); // ✅ formatIntervall gibt nur feste Strings zurück
-    eintrag.appendChild(intervallSpan);
+    intervallSpan.textContent = p.vonEinkauf ? "🛒 Einkauf" : formatIntervall(p.intervall, p.anzahl);
+    einkaufEintrag.appendChild(intervallSpan);
 
     // Fälligkeit (optional)
-    if (naechstesDatum) {
+    if (p.intervall === "einmalig" && p.datum) {
+        const datumSpan = document.createElement("span");
+        datumSpan.className = "tag einmalig-datum";
+        const d = new Date(p.datum);
+        datumSpan.textContent = "📌 " + d.toLocaleDateString("de-DE");
+        einkaufEintrag.appendChild(datumSpan);
+    } else if (naechstesDatum) {
         const datumSpan = document.createElement("span");
         datumSpan.className = "tag faelligkeit";
-        datumSpan.textContent = "📅 " + naechstesDatum; // ✅ Automatisch sicher!
-        eintrag.appendChild(datumSpan);
+        datumSpan.textContent = "📅 " + naechstesDatum;
+        einkaufEintrag.appendChild(datumSpan);
     } else {
         const placeholder = document.createElement("span");
         placeholder.className = "tag";
         placeholder.style.visibility = "hidden";
-        eintrag.appendChild(placeholder);
+        einkaufEintrag.appendChild(placeholder);
     }
 
     // Löschen-Button
@@ -121,8 +136,8 @@ function zeigePosten(p, index) {
         berechneGesamtsumme();
     };
 
-    eintrag.appendChild(loeschenBtn);
-    liste.appendChild(eintrag);
+    einkaufEintrag.appendChild(loeschenBtn);
+    liste.appendChild(einkaufEintrag);
 
     // ✅ Trennlinie nach dem letzten Einnahmen-Eintrag
     if (p.typ === "einnahme" && index < posten.length - 1 && posten[index + 1].typ === "ausgabe") {
@@ -177,69 +192,66 @@ function berechneNaechstesDatum(datum, intervall, anzahl) {
 }
 
 function berechneGesamtsumme() {
-    let ausgaben = 0;
-    let einnahmen = 0;
+    const monat = parseInt(document.getElementById("bilanz-monat").value);
+    const jahr = parseInt(document.getElementById("bilanz-jahr").value);
 
-    // ✅ NEU: Getätigte Einkäufe dieses Monats
+    let monatsEinnahmen = 0;
+    let monatsAusgaben = 0;
+    let jahresEinnahmen = 0;
+    let jahresAusgaben = 0;
     let einkaufAusgaben = 0;
+
     const heute = new Date();
     const aktuellerMonat = heute.getMonth();
     const aktuellesJahr = heute.getFullYear();
 
     posten.forEach(function (p) {
-        // ✅ NEU: Einkäufe separat tracken
+        // Einkäufe separat
         if (p.typ === "einkauf" && p.abgehakt && p.abgehaktDatum) {
             const abgehaktDatum = new Date(p.abgehaktDatum);
-            if (abgehaktDatum.getMonth() === aktuellerMonat && abgehaktDatum.getFullYear() === aktuellesJahr) {
-                einkaufAusgaben += parseFloat(p.betrag);
-                return; // Weiter zum nächsten Posten
+            if (abgehaktDatum.getMonth() === aktuellerMonat &&
+                abgehaktDatum.getFullYear() === aktuellesJahr) {
+                einkaufAusgaben += parseFloat(p.betrag) || 0;
             }
+            return;
         }
 
-        // Normale Ausgaben/Einnahmen (wie bisher)
-        const betrag = parseFloat(p.betrag);
-        let monatlich = 0;
+        if (!p.datum) return;
+        const betrag = parseFloat(p.betrag) || 0;
 
-        if (p.intervall === "wöchentlich") {
-            monatlich = betrag * 4.33;
-        } else if (p.intervall === "monatlich") {
-            monatlich = betrag;
-        } else if (p.intervall === "alle-x-monate") {
-            monatlich = betrag / parseFloat(p.anzahl);
-        } else if (p.intervall === "alle-x-jahre") {
-            monatlich = betrag / (parseFloat(p.anzahl) * 12);
-        } else {
-            monatlich = 0;
+        // Alle Fälligkeiten im gewählten Monat
+        const faelligkeitenMonat = alleFaelligkeitenImMonat(jahr, monat);
+        const faelltInMonat = Object.values(faelligkeitenMonat).flat().some(f => f === p);
+        if (faelltInMonat) {
+            if (p.typ === "einnahme") monatsEinnahmen += betrag;
+            else if (p.typ === "ausgabe") monatsAusgaben += betrag;
         }
 
-        if (p.typ === "einnahme") {
-            einnahmen += monatlich;
-        } else if (p.typ === "ausgabe") {
-            ausgaben += monatlich;
+        // Alle Fälligkeiten im gewählten Jahr
+        for (let m = 0; m < 12; m++) {
+            const faelligkeitenJahr = alleFaelligkeitenImMonat(jahr, m);
+            const faelltInJahr = Object.values(faelligkeitenJahr).flat().some(f => f === p);
+            if (faelltInJahr) {
+                if (p.typ === "einnahme") jahresEinnahmen += betrag;
+                else if (p.typ === "ausgabe") jahresAusgaben += betrag;
+            }
         }
     });
 
-    const bilanz = einnahmen - (ausgaben + einkaufAusgaben);
-    const anzeige = document.getElementById("gesamtsumme");
+    const monatsBilanz = monatsEinnahmen - monatsAusgaben;
+    const jahresBilanz = jahresEinnahmen - jahresAusgaben;
 
-    anzeige.innerHTML = "";
+    document.getElementById("bilanz-einnahmen").textContent = monatsEinnahmen.toFixed(2) + "€";
+    document.getElementById("bilanz-ausgaben").textContent = monatsAusgaben.toFixed(2) + "€";
+    document.getElementById("bilanz-gesamt").textContent = (monatsBilanz >= 0 ? "+" : "") + monatsBilanz.toFixed(2) + "€";
+    document.getElementById("bilanz-gesamt").style.color = monatsBilanz >= 0 ? "#81c784" : "#e74c3c";
 
-    function createSpan(text, color, fontWeight = "normal") {
-        const span = document.createElement("span");
-        span.style.color = color;
-        span.style.fontWeight = fontWeight;
-        span.textContent = text;
-        return span;
-    }
+    document.getElementById("bilanz-jahr-einnahmen").textContent = jahresEinnahmen.toFixed(2) + "€";
+    document.getElementById("bilanz-jahr-ausgaben").textContent = jahresAusgaben.toFixed(2) + "€";
+    document.getElementById("bilanz-jahr-gesamt").textContent = (jahresBilanz >= 0 ? "+" : "") + jahresBilanz.toFixed(2) + "€";
+    document.getElementById("bilanz-jahr-gesamt").style.color = jahresBilanz >= 0 ? "#81c784" : "#e74c3c";
 
-    // ✅ NEU: Einkaufsausgaben separat anzeigen
-    anzeige.appendChild(createSpan(`Einnahmen: ${einnahmen.toFixed(2)}€ (monatlich)`, "#81c784"));
-    anzeige.appendChild(document.createTextNode(" | "));
-    anzeige.appendChild(createSpan(`Ausgaben: ${ausgaben.toFixed(2)}€ (monatlich)`, "#e74c3c"));
-    anzeige.appendChild(document.createTextNode(" | "));
-    anzeige.appendChild(createSpan(`Einkäufe: ${einkaufAusgaben.toFixed(2)}€ (diesen Monat)`, "#e74c3c"));
-    anzeige.appendChild(document.createTextNode(" | "));
-    anzeige.appendChild(createSpan(`Bilanz: ${bilanz >= 0 ? '+' : ''}${bilanz.toFixed(2)}€`, bilanz >= 0 ? "#81c784" : "#e74c3c", "bold"));
+    document.getElementById("bilanz-einkaufe").textContent = einkaufAusgaben.toFixed(2) + "€";
 }
 
 document.getElementById("rechner-btn").addEventListener("click", function () {
@@ -282,6 +294,24 @@ document.getElementById("rechner-btn").addEventListener("click", function () {
 
 
 let kalenderDatum = new Date();
+
+// Jahres-Dropdown befüllen und Standardwerte setzen
+const bilanzJahrSelect = document.getElementById("bilanz-jahr");
+const aktuellesJahrBilanz = new Date().getFullYear();
+for (let j = aktuellesJahrBilanz - 2; j <= aktuellesJahrBilanz + 5; j++) {
+    const option = document.createElement("option");
+    option.value = j;
+    option.textContent = j;
+    if (j === aktuellesJahrBilanz) option.selected = true;
+    bilanzJahrSelect.appendChild(option);
+}
+
+// Aktuellen Monat vorauswählen
+document.getElementById("bilanz-monat").value = new Date().getMonth();
+
+// Bei Änderung neu berechnen
+document.getElementById("bilanz-monat").addEventListener("change", berechneGesamtsumme);
+document.getElementById("bilanz-jahr").addEventListener("change", berechneGesamtsumme);
 
 function alleFaelligkeitenImMonat(jahr, monat) {
     const faelligkeiten = {};
@@ -581,7 +611,7 @@ document.getElementById("einkauf-form").addEventListener("submit", function (eve
         typ: "einkauf",
         name: document.getElementById("einkauf-name").value,
         betrag: document.getElementById("einkauf-betrag").value,
-        datum: document.getElementById("einkauf-datum").value,
+        notiz: document.getElementById("einkauf-notiz").value,
         abgehakt: false,
         abgehaktDatum: null
     };
@@ -623,10 +653,34 @@ function zeigeEinkaufListe() {
         checkbox.addEventListener("change", function () {
             p.abgehakt = this.checked;
             p.abgehaktDatum = this.checked ? new Date().toISOString().split('T')[0] : null;
+
+            if (this.checked) {
+                // Als einmaligen Posten hinzufügen
+                const neuerPosten = {
+                    typ: "ausgabe",
+                    name: p.name,
+                    betrag: p.betrag,
+                    datum: p.abgehaktDatum, // Abhak-Datum als Datum
+                    intervall: "einmalig",
+                    anzahl: 1,
+                    vonEinkauf: true // Markierung damit wir ihn später finden können
+                };
+                posten.push(neuerPosten);
+            } else {
+                // Posten wieder entfernen wenn Haken weggenommen
+                const index = posten.findIndex(x => x.vonEinkauf && x.name === p.name && x.datum === p.abgehaktDatum);
+                if (index !== -1) posten.splice(index, 1);
+                p.abgehaktDatum = null;
+            }
+
             localStorage.setItem("posten", JSON.stringify(posten));
+            const postenListe = document.getElementById("posten-liste");
+            postenListe.innerHTML = "";
+            sortierePosten();
+            posten.forEach((pp, i) => zeigePosten(pp, i));
             zeigeEinkaufListe();
             berechneEinkaufStatistik();
-            berechneGesamtsumme(); // Monatsbilanz aktualisieren
+            berechneGesamtsumme();
         });
         eintrag.appendChild(checkbox);
 
@@ -645,7 +699,19 @@ function zeigeEinkaufListe() {
         // Datum
         const datumSpan = document.createElement("span");
         datumSpan.className = "einkauf-datum";
-        datumSpan.textContent = p.datum ? `(${p.datum})` : "";
+        if (p.notiz) {
+            if (p.notiz.startsWith("http")) {
+                const link = document.createElement("a");
+                link.href = p.notiz;
+                link.textContent = "🔗 Link";
+                link.target = "_blank";
+                link.style.color = "#4fc3f7";
+                eintrag.appendChild(link);
+            } else {
+                datumSpan.textContent = `📝 ${p.notiz}`;
+                eintrag.appendChild(datumSpan);
+            }
+        }
         eintrag.appendChild(datumSpan);
 
         // Abgehakt-Datum anzeigen
@@ -724,5 +790,9 @@ tabBtns.forEach(function (btn) {
             if (ziel === "einkauf") zeigeEinkaufListe(); // ✅ NEU
         }
     });
+});
+
+window.addEventListener("load", function () {
+    bautKalender();
 });
 

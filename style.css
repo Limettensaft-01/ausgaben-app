@@ -405,6 +405,105 @@ li.ausgabe-eintrag {
     color: #0067c0;
 }
 
+li.einkauf-eintrag {
+    border-color: #4fc3f7;
+}
+
+#gesamtsumme {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.bilanz-karte {
+    background-color: #2d2d2d;
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-left: 3px solid #444;
+}
+
+.bilanz-karte.einnahmen {
+    border-left-color: #81c784;
+}
+
+.bilanz-karte.ausgaben {
+    border-left-color: #e74c3c;
+}
+
+.bilanz-karte.einkaufe {
+    border-left-color: #4fc3f7;
+}
+
+.bilanz-karte.bilanz {
+    border-left-color: #0067c0;
+}
+
+.bilanz-label {
+    font-size: 11px;
+    color: #888;
+}
+
+.bilanz-wert {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.bilanz-karte.einnahmen .bilanz-wert {
+    color: #81c784;
+}
+
+.bilanz-karte.ausgaben .bilanz-wert {
+    color: #e74c3c;
+}
+
+.bilanz-karte.einkaufe .bilanz-wert {
+    color: #4fc3f7;
+}
+
+.bilanz-sub {
+    font-size: 10px;
+    color: #666;
+}
+
+
+#bilanz-auswahl {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+#bilanz-auswahl select {
+    flex: 1;
+}
+
+.bilanz-sektion {
+    margin-bottom: 12px;
+}
+
+.bilanz-sektion-titel {
+    font-size: 11px;
+    color: #888;
+    margin: 0 0 6px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bilanz-karten-reihe {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.tag.einmalig-datum {
+    color: #ffb74d;
+    border-color: #ffb74d;
+    text-align: center;
+}
+
 /* Mobile-Ansicht */
 @media (max-width: 600px) {
     body {
@@ -421,7 +520,7 @@ li.ausgabe-eintrag {
 
     #tab-leiste {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(6, 1fr);
         position: fixed;
         bottom: 0;
         left: 0;
@@ -470,7 +569,8 @@ li.ausgabe-eintrag {
     #bereich-rechner,
     #bereich-posten,
     #bereich-kalender,
-    #bereich-einkauf {
+    #bereich-einkauf
+    #bereich-einstellungen {
         display: none;
     }
 
@@ -518,13 +618,41 @@ li.ausgabe-eintrag {
         margin: 5px 0 15px 0;
         font-size: 16px; /* Verhindert Zoom auf iOS */
         box-sizing: border-box;
-        }
+    }
     
     #einkauf-form {
         width: 100%;
         max-width: 100%;
         padding: 0;
         margin: 0;
+    }
+
+    .bilanz-karten-reihe {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    }
+
+    .bilanz-wert {
+        font-size: 13px;
+    }
+
+    .bilanz-karte {
+    padding: 8px 6px;
+    }
+
+    #bilanz-auswahl {
+        gap: 6px;
+    }
+
+    #tab-leiste {
+        grid-template-columns: repeat(6, 1fr);
+        height: auto;
+        min-height: 56px;
+    }
+
+    .tab-btn {
+        font-size: 9px;
+        padding: 6px 2px;
     }
 
 }

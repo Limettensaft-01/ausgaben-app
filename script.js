@@ -234,18 +234,21 @@ function berechneGesamtsumme() {
     let jahresEinnahmen = 0;
     let jahresAusgaben = 0;
     let einkaufAusgaben = 0;
+    let einkaufAusgabenJahr = 0;
 
     const heute = new Date();
     const aktuellerMonat = heute.getMonth();
     const aktuellesJahr = heute.getFullYear();
 
     posten.forEach(function (p) {
-        // Einkäufe separat
         if (p.typ === "einkauf" && p.abgehakt && p.abgehaktDatum) {
             const abgehaktDatum = new Date(p.abgehaktDatum);
-            if (abgehaktDatum.getMonth() === aktuellerMonat &&
-                abgehaktDatum.getFullYear() === aktuellesJahr) {
+            if (abgehaktDatum.getMonth() === monat &&
+                abgehaktDatum.getFullYear() === jahr) {
                 einkaufAusgaben += parseFloat(p.betrag) || 0;
+            }
+            if (abgehaktDatum.getFullYear() === jahr) {
+                einkaufAusgabenJahr += parseFloat(p.betrag) || 0;
             }
             return;
         }
@@ -274,7 +277,7 @@ function berechneGesamtsumme() {
     });
 
     const monatsBilanz = monatsEinnahmen - (monatsAusgaben + einkaufAusgaben);
-    const jahresBilanz = jahresEinnahmen - (jahresAusgaben + einkaufAusgaben);
+    const jahresBilanz = jahresEinnahmen - (jahresAusgaben + einkaufAusgabenJahr);
 
     document.getElementById("bilanz-einnahmen").textContent = monatsEinnahmen.toFixed(2) + "€";
     document.getElementById("bilanz-ausgaben").textContent = (monatsAusgaben + einkaufAusgaben).toFixed(2) + "€";
@@ -282,7 +285,7 @@ function berechneGesamtsumme() {
     document.getElementById("bilanz-gesamt").style.color = monatsBilanz >= 0 ? "#81c784" : "#e74c3c";
 
     document.getElementById("bilanz-jahr-einnahmen").textContent = jahresEinnahmen.toFixed(2) + "€";
-    document.getElementById("bilanz-jahr-ausgaben").textContent = (jahresAusgaben + einkaufAusgaben).toFixed(2) + "€";
+    document.getElementById("bilanz-jahr-ausgaben").textContent = (jahresAusgaben + einkaufAusgabenJahr).toFixed(2) + "€";
     document.getElementById("bilanz-jahr-gesamt").textContent = (jahresBilanz >= 0 ? "+" : "") + jahresBilanz.toFixed(2) + "€";
     document.getElementById("bilanz-jahr-gesamt").style.color = jahresBilanz >= 0 ? "#81c784" : "#e74c3c";
 

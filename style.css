@@ -8,6 +8,7 @@ body {
     color: #e0e0e0;
 }
 
+
 /* ============================================
    BOX-SIZING RESET
    ============================================ */
@@ -16,6 +17,13 @@ body {
 *::before,
 *::after {
     box-sizing: border-box;
+}
+
+input,
+select {
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 form {
@@ -141,9 +149,23 @@ button.loeschen {
 
 #kalender-navigation {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 16px;
+    gap: 8px;
     margin-bottom: 10px;
+}
+
+/* Eingabefelder im Kalender */
+#kalender-navigation input,
+#kalender-navigation select {
+    max-width: 100%;
+    box-sizing: border-box;
+    width: auto;
+    flex: 1;
+    min-width: 0;
+    /* Wichtig für Flexbox-Elemente */
+    padding: 6px;
+    font-size: 14px;
 }
 
 #kalender-navigation button {
@@ -600,6 +622,8 @@ li.einkauf-eintrag {
 #erinnerung-form input {
     font-size: 13px;
     padding: 6px 8px;
+    box-sizing: border-box;
+    width: 100%;
 }
 
 #erinnerung-form button {
@@ -607,6 +631,7 @@ li.einkauf-eintrag {
     padding: 7px;
     font-size: 13px;
     background-color: #ff8a65;
+    margin-top: 4px;
 }
 
 #erinnerung-form button:hover {
@@ -780,4 +805,17 @@ li.einkauf-eintrag {
         padding: 8px;
     }
 
+}
+
+@media (max-width: 400px) {
+
+    #kalender-navigation input,
+    #kalender-navigation select {
+        font-size: 12px;
+        padding: 4px;
+    }
+
+    #erinnerung-form {
+        grid-template-columns: 1fr;
+    }
 }

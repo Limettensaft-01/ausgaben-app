@@ -134,6 +134,28 @@
     <p>Daten werden lokal im Browser gespeichert (localStorage).</p>
     <p>Regelmäßige Backups empfohlen!</p>
   </div>
+
+  <div class="backup-section">
+    <h3>🔔 Benachrichtigungen</h3>
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+      <label>Benachrichtigungen:</label>
+      <select id="notif-aktiv">
+        <option value="aus">Aus</option>
+        <option value="an">An</option>
+      </select>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+      <label>Tage vorher erinnern:</label>
+      <input type="number" id="notif-tage" min="0" max="30" value="3" style="width:70px;">
+    </div>
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+      <label>Uhrzeit:</label>
+      <input type="time" id="notif-uhrzeit" value="08:00">
+    </div>
+    <button type="button" id="notif-speichern-btn">💾 Einstellungen speichern</button>
+    <p id="notif-status" style="margin-top:10px; color:#888; font-size:13px;"></p>
+  </div>
+
 </div>
 
 <div id="bereich-posten">

@@ -1250,3 +1250,98 @@ document.getElementById("erinnerung-btn").addEventListener("click", function () 
     document.getElementById("erinnerung-uhrzeit").value = "";
     document.getElementById("erinnerung-notiz").value = "";
 });
+
+// ============================================
+// BENACHRICHTIGUNGEN
+// ============================================
+
+function ladeNotifEinstellungen() {
+    const einstellungen = JSON.parse(localStorage.getItem("notifEinstellungen")) || {
+        aktiv: false,
+        tage: 3,
+        uhrzeit: "08:00"
+    };
+    document.getElementById("notif-aktiv").value = einstellungen.aktiv ? "an" : "aus";
+    document.getElementById("notif-tage").value = einstellungen.tage;
+    document.getElementById("notif-uhrzeit").value = einstellungen.uhrzeit;
+    return einstellungen;
+}
+
+document.getElementById("notif-speichern-btn").addEventListener("click", async function () {
+    const status = document.getElementById("notif-status");
+    const aktiv = document.getElementById("notif-aktiv").value === "an";
+
+    if (aktiv) {
+        const erlaubnis = await Notification.requestPermission();
+        if (erlaubnis !== "granted") {
+            status.textContent = "❌ Benachrichtigungen wurden blockiert.";
+            status.style.color = "#e74c3c";
+            return;
+        }
+    }
+
+    const einstellungen = {
+        aktiv: aktiv,
+        tage: parseInt(document.getElementById("notif-tage").value),
+        uhrzeit: document.getElementById("notif-uhrzeit").value
+    };
+
+    localStorage.setItem("notifEinstellungen", JSON.stringify(einstellungen));
+    status.textContent = "✅ Gespeichert!";
+    status.style.color = "#81c784";
+
+    if (aktiv) {
+        registriereNotifPruefung(einstellungen);
+    }
+});
+
+function registriereNotifPruefung(einstellungen) {
+    if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+            typ: "notif-einstellungen",
+            einstellungen: einstellungen,
+            posten: posten
+        });
+    }
+}
+
+function pruefeUndSendeNotifications() {
+    const einstellungen = JSON.parse(localStorage.getItem("notifEinstellungen"));
+    if (!einstellungen || !einstellungen.aktiv) return;
+    if (Notification.permission !== "granted") return;
+
+    const heute = new Date();
+    heute.setHours(0, 0, 0, 0);
+
+    posten.forEach(p => {
+        if (p.typ === "einkauf" || p.typ === "erinnerung" || p.vonEinkauf) return;
+        if (!p.datum) return;
+
+        const naechstesStr = berechneNaechstesDatum(p.datum, p.intervall, p.anzahl);
+        if (!naechstesStr) return;
+
+        const teile = naechstesStr.split(".");
+        const naechstes = new Date(teile[2], teile[1] - 1, teile[0]);
+        naechstes.setHours(0, 0, 0, 0);
+
+        const diffTage = Math.round((naechstes - heute) / (1000 * 60 * 60 * 24));
+
+        if (diffTage === 0) {
+            new Notification("💸 Heute fällig!", {
+                body: `${p.name} — ${p.betrag}€`,
+                icon: "/ausgaben-app/icon.png"
+            });
+        } else if (diffTage === einstellungen.tage) {
+            new Notification(`⏰ In ${diffTage} Tagen fällig`, {
+                body: `${p.name} — ${p.betrag}€`,
+                icon: "/ausgaben-app/icon.png"
+            });
+        }
+    });
+}
+
+// Beim Laden Einstellungen laden und prüfen
+window.addEventListener("load", function () {
+    ladeNotifEinstellungen();
+    pruefeUndSendeNotifications();
+});

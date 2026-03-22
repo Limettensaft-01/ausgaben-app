@@ -765,4 +765,19 @@ li.einkauf-eintrag {
         padding: 6px 2px;
     }
 
+    #erinnerung-form {
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+    }
+
+    #erinnerung-form input {
+        font-size: 14px;
+        padding: 6px 8px;
+    }
+
+    #erinnerung-form button {
+        font-size: 13px;
+        padding: 8px;
+    }
+
 }

@@ -574,6 +574,13 @@ li.einkauf-eintrag {
     color: #e0e0e0;
 }
 
+#untere-reihe {
+    display: grid;
+    grid-template-columns: 1fr 120px;
+    gap: 12px;
+    margin-bottom: 16px;
+    align-items: start;
+}
 
 /* Mobile-Ansicht */
 @media (max-width: 600px) {

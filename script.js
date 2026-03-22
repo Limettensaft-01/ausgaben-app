@@ -43,6 +43,7 @@ posten.forEach((p, i) => zeigePosten(p, i));
 window.addEventListener("load", function () {
     document.getElementById("bilanz-monat").value = new Date().getMonth();
     berechneGesamtsumme();
+    zeichneChart();
     bautKalender();
     zeigeEinkaufListe();
     berechneEinkaufStatistik();
@@ -68,6 +69,7 @@ form.addEventListener("submit", function (event) {
     liste.innerHTML = ""; // ✅ ALTE LISTE LEEREN
     posten.forEach((p, i) => zeigePosten(p, i)); // ✅ NEU RENDERN
     berechneGesamtsumme();
+    zeichneChart();
     form.reset();
 });
 
@@ -82,6 +84,7 @@ function formatIntervall(intervall, anzahl) {
 
 function zeigePosten(p, index) {
     if (p.typ === "einkauf") return; // Einkäufe nicht in der Postenliste anzeigen
+    if (p.vonEinkauf) return;
     const einkaufEintrag = document.createElement("li");
 
     einkaufEintrag.style.cursor = "pointer";
@@ -149,6 +152,7 @@ function zeigePosten(p, index) {
         liste.innerHTML = ""; // ✅ ALTE LISTE LEEREN
         posten.forEach((p, i) => zeigePosten(p, i)); // ✅ NEU RENDERN
         berechneGesamtsumme();
+        zeichneChart();
     };
 
     einkaufEintrag.appendChild(loeschenBtn);
@@ -246,6 +250,7 @@ function berechneGesamtsumme() {
             return;
         }
 
+        if (p.vonEinkauf) return;
         if (!p.datum) return;
         const betrag = parseFloat(p.betrag) || 0;
 
@@ -268,16 +273,16 @@ function berechneGesamtsumme() {
         }
     });
 
-    const monatsBilanz = monatsEinnahmen - monatsAusgaben;
-    const jahresBilanz = jahresEinnahmen - jahresAusgaben;
+    const monatsBilanz = monatsEinnahmen - (monatsAusgaben + einkaufAusgaben);
+    const jahresBilanz = jahresEinnahmen - (jahresAusgaben + einkaufAusgaben);
 
     document.getElementById("bilanz-einnahmen").textContent = monatsEinnahmen.toFixed(2) + "€";
-    document.getElementById("bilanz-ausgaben").textContent = monatsAusgaben.toFixed(2) + "€";
+    document.getElementById("bilanz-ausgaben").textContent = (monatsAusgaben + einkaufAusgaben).toFixed(2) + "€";
     document.getElementById("bilanz-gesamt").textContent = (monatsBilanz >= 0 ? "+" : "") + monatsBilanz.toFixed(2) + "€";
     document.getElementById("bilanz-gesamt").style.color = monatsBilanz >= 0 ? "#81c784" : "#e74c3c";
 
     document.getElementById("bilanz-jahr-einnahmen").textContent = jahresEinnahmen.toFixed(2) + "€";
-    document.getElementById("bilanz-jahr-ausgaben").textContent = jahresAusgaben.toFixed(2) + "€";
+    document.getElementById("bilanz-jahr-ausgaben").textContent = (jahresAusgaben + einkaufAusgaben).toFixed(2) + "€";
     document.getElementById("bilanz-jahr-gesamt").textContent = (jahresBilanz >= 0 ? "+" : "") + jahresBilanz.toFixed(2) + "€";
     document.getElementById("bilanz-jahr-gesamt").style.color = jahresBilanz >= 0 ? "#81c784" : "#e74c3c";
 
@@ -348,6 +353,8 @@ function alleFaelligkeitenImMonat(jahr, monat) {
 
     posten.forEach(p => {
         if (!p.datum) return;
+        if (p.typ === "einkauf") return;
+        if (p.vonEinkauf) return;
 
         const d = new Date(p.datum);
         const ende = new Date(jahr, monat + 1, 0);
@@ -614,6 +621,7 @@ document.getElementById("backup-import-btn").addEventListener("click", function 
                     sortierePosten();
                     posten.forEach((p, i) => zeigePosten(p, i));
                     berechneGesamtsumme();
+                    zeichneChart();
 
                     alert("✅ Backup erfolgreich importiert!");
                 }
@@ -650,7 +658,8 @@ document.getElementById("einkauf-form").addEventListener("submit", function (eve
     localStorage.setItem("posten", JSON.stringify(posten));
     zeigeEinkaufListe();
     berechneEinkaufStatistik();
-    berechneGesamtsumme(); // Monatsbilanz aktualisieren
+    berechneGesamtsumme();
+    zeichneChart(); // Monatsbilanz aktualisieren
     document.getElementById("einkauf-form").reset();
 });
 
@@ -659,7 +668,7 @@ function zeigeEinkaufListe() {
     const liste = document.getElementById("einkauf-liste");
     liste.innerHTML = "";
 
-    const einkaufen = posten.filter(p => p.typ === "einkauf");
+    const einkaufen = posten.filter(p => p.typ === "einkauf" && !p.versteckt);
 
     // Sortieren: zuerst ungehäckt, dann nach Datum
     einkaufen.sort((a, b) => {
@@ -711,6 +720,7 @@ function zeigeEinkaufListe() {
             zeigeEinkaufListe();
             berechneEinkaufStatistik();
             berechneGesamtsumme();
+            zeichneChart();
         });
         eintrag.appendChild(checkbox);
 
@@ -757,11 +767,16 @@ function zeigeEinkaufListe() {
         loeschenBtn.textContent = "✕";
         loeschenBtn.className = "loeschen";
         loeschenBtn.onclick = function () {
+            if (p.abgehakt) {
+                p.versteckt = true;
+            } else {
             posten.splice(posten.indexOf(p), 1);
+            }
             localStorage.setItem("posten", JSON.stringify(posten));
             zeigeEinkaufListe();
             berechneEinkaufStatistik();
             berechneGesamtsumme();
+            zeichneChart();
         };
         eintrag.appendChild(loeschenBtn);
 
@@ -771,7 +786,7 @@ function zeigeEinkaufListe() {
 
 // Statistik berechnen
 function berechneEinkaufStatistik() {
-    const einkaufen = posten.filter(p => p.typ === "einkauf");
+    const einkaufen = posten.filter(p => p.typ === "einkauf" && !p.versteckt);
 
     let geplant = 0;
     let getatigt = 0;
@@ -824,6 +839,7 @@ tabBtns.forEach(function (btn) {
 
 window.addEventListener("load", function () {
     bautKalender();
+    zeichneChart();
 });
 
 function zeigeDetail(p) {
@@ -876,4 +892,212 @@ function formatKategorieName(kategorie) {
         sonstiges: "Sonstiges"
     };
     return kategorien[kategorie] || "Sonstiges";
+
+    
 }
+
+let chartSegmente = [];
+
+function zeichneChart() {
+    const canvas = document.getElementById("ausgaben-chart");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const monat = parseInt(document.getElementById("bilanz-monat").value);
+    const jahr = parseInt(document.getElementById("bilanz-jahr").value);
+
+    const kategoriefarben = {
+        wohnen: "#4fc3f7", essen: "#81c784", transport: "#ffb74d",
+        freizeit: "#ce93d8", gesundheit: "#ef9a9a", kleidung: "#80cbc4",
+        technik: "#90caf9", einnahme: "#a5d6a7", sonstiges: "#bcaaa4"
+    };
+
+    const kategorienSummen = {};
+    const faelligkeiten = alleFaelligkeitenImMonat(jahr, monat);
+    Object.values(faelligkeiten).flat().forEach(p => {
+        if (p.typ !== "ausgabe") return;
+        const kat = p.kategorie || "sonstiges";
+        kategorienSummen[kat] = (kategorienSummen[kat] || 0) + parseFloat(p.betrag);
+    });
+
+    const total = Object.values(kategorienSummen).reduce((a, b) => a + b, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    chartSegmente = [];
+
+    if (total === 0) {
+        ctx.fillStyle = "#444";
+        ctx.beginPath();
+        ctx.arc(60, 60, 50, 0, Math.PI * 2);
+        ctx.fill();
+        return;
+    }
+
+    let startWinkel = -Math.PI / 2;
+    Object.entries(kategorienSummen).forEach(([kat, summe]) => {
+        const winkel = (summe / total) * Math.PI * 2;
+
+        chartSegmente.push({
+            kat,
+            summe,
+            startWinkel,
+            endWinkel: startWinkel + winkel,
+            farbe: kategoriefarben[kat] || "#888"
+        });
+
+        ctx.beginPath();
+        ctx.moveTo(60, 60);
+        ctx.arc(60, 60, 50, startWinkel, startWinkel + winkel);
+        ctx.closePath();
+        ctx.fillStyle = kategoriefarben[kat] || "#888";
+        ctx.fill();
+        ctx.strokeStyle = "#202020";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        startWinkel += winkel;
+    });
+
+    ctx.beginPath();
+    ctx.arc(60, 60, 28, 0, Math.PI * 2);
+    ctx.fillStyle = "#202020";
+    ctx.fill();
+}
+
+document.getElementById("ausgaben-chart").addEventListener("click", function (e) {
+    const canvas = this;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left - 60;
+    const y = e.clientY - rect.top - 60;
+    const distanz = Math.sqrt(x * x + y * y);
+
+    if (distanz < 28 || distanz > 50) return;
+
+    let winkel = Math.atan2(y, x);
+    if (winkel < -Math.PI / 2) winkel += Math.PI * 2;
+
+    const segment = chartSegmente.find(s => {
+        let start = s.startWinkel;
+        let end = s.endWinkel;
+        if (start < -Math.PI / 2) start += Math.PI * 2;
+        if (end < -Math.PI / 2) end += Math.PI * 2;
+        return winkel >= start && winkel <= end;
+    });
+
+    if (!segment) return;
+
+    document.getElementById("detail-name").textContent =
+        formatKategorie(segment.kat) + " " + formatKategorieName(segment.kat);
+
+    const inhalt = document.getElementById("detail-inhalt");
+    inhalt.innerHTML = "";
+
+    const monat = parseInt(document.getElementById("bilanz-monat").value);
+    const jahr = parseInt(document.getElementById("bilanz-jahr").value);
+    const faelligkeiten = alleFaelligkeitenImMonat(jahr, monat);
+
+    const posten = Object.values(faelligkeiten).flat().filter(p =>
+        p.typ === "ausgabe" && (p.kategorie || "sonstiges") === segment.kat
+    );
+
+    const gesamtKarte = document.createElement("div");
+    gesamtKarte.className = "detail-karte";
+    gesamtKarte.style.gridColumn = "1 / -1";
+    gesamtKarte.innerHTML = `
+        <div class="detail-karte-label">Gesamt diesen Monat</div>
+        <div class="detail-karte-wert" style="color: ${segment.farbe}; font-size: 18px;">${segment.summe.toFixed(2)}€</div>
+    `;
+    inhalt.appendChild(gesamtKarte);
+
+    posten.forEach(p => {
+        const karte = document.createElement("div");
+        karte.className = "detail-karte";
+        karte.innerHTML = `
+            <div class="detail-karte-label">${p.name}</div>
+            <div class="detail-karte-wert">${p.betrag}€ — ${formatIntervall(p.intervall, p.anzahl)}</div>
+        `;
+        inhalt.appendChild(karte);
+    });
+
+    document.getElementById("detail-overlay").style.display = "block";
+    document.getElementById("detail-panel").classList.add("offen");
+});
+
+document.getElementById("einkaufe-karte").addEventListener("click", function () {
+    const heute = new Date();
+    const aktuellerMonat = heute.getMonth();
+    const aktuellesJahr = heute.getFullYear();
+
+    const monatsEinkaufe = posten.filter(p =>
+        p.typ === "einkauf" && p.abgehakt && p.abgehaktDatum &&
+        new Date(p.abgehaktDatum).getMonth() === aktuellerMonat &&
+        new Date(p.abgehaktDatum).getFullYear() === aktuellesJahr
+    );
+
+    document.getElementById("detail-name").textContent = "🛒 Einkäufe diesen Monat";
+    const inhalt = document.getElementById("detail-inhalt");
+    inhalt.innerHTML = "";
+
+    if (monatsEinkaufe.length === 0) {
+        const leer = document.createElement("div");
+        leer.className = "detail-karte";
+        leer.style.gridColumn = "1 / -1";
+        leer.innerHTML = `<div class="detail-karte-wert">Keine Einkäufe diesen Monat</div>`;
+        inhalt.appendChild(leer);
+    } else {
+        let gesamt = 0;
+        monatsEinkaufe.forEach(p => {
+            gesamt += parseFloat(p.betrag) || 0;
+            const karte = document.createElement("div");
+            karte.className = "detail-karte";
+            karte.style.cursor = "pointer";
+            karte.style.gridColumn = "1 / -1";
+            karte.innerHTML = `
+                <div class="detail-karte-label">${p.name} — ${p.abgehaktDatum}</div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div class="detail-karte-wert">${parseFloat(p.betrag).toFixed(2)}€</div>
+                    <button style="background:#e74c3c; padding:2px 8px; font-size:11px; border:none; border-radius:4px; color:white; cursor:pointer;">↩ Rückgängig</button>
+                </div>
+            `;
+            karte.querySelector("button").addEventListener("click", function (e) {
+                e.stopPropagation();
+                p.abgehakt = false;
+                p.abgehaktDatum = null;
+                localStorage.setItem("posten", JSON.stringify(posten));
+                schliesseDetail();
+                zeigeEinkaufListe();
+                berechneEinkaufStatistik();
+                berechneGesamtsumme();
+                zeichneChart();
+            });    
+            inhalt.appendChild(karte);
+        });
+
+        const gesamtKarte = document.createElement("div");
+        gesamtKarte.className = "detail-karte";
+        gesamtKarte.style.gridColumn = "1 / -1";
+        gesamtKarte.style.borderLeft = "3px solid #4fc3f7";
+        gesamtKarte.innerHTML = `
+            <div class="detail-karte-label">Gesamt</div>
+            <div class="detail-karte-wert" style="color: #4fc3f7">${gesamt.toFixed(2)}€</div>
+        `;
+        inhalt.appendChild(gesamtKarte);
+    }
+
+    document.getElementById("detail-overlay").style.display = "block";
+    document.getElementById("detail-panel").classList.add("offen");
+});
+
+document.getElementById("einkauf-leeren-btn").addEventListener("click", function () {
+    if (confirm("Alle Einkäufe aus der Liste entfernen?")) {
+        // Abgehakte nur verstecken, nicht-abgehakte komplett löschen
+        posten.forEach(p => {
+            if (p.typ === "einkauf" && p.abgehakt) {
+                p.versteckt = true;
+            }
+        });
+        posten = posten.filter(p => !(p.typ === "einkauf" && !p.abgehakt));
+        localStorage.setItem("posten", JSON.stringify(posten));
+        zeigeEinkaufListe();
+        berechneEinkaufStatistik();
+        berechneGesamtsumme();
+        zeichneChart();
+    }
+});

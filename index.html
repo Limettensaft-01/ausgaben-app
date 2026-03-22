@@ -92,6 +92,8 @@
     <p>Getätigt (diesen Monat): <strong id="einkauf-getatigt">0.00€</strong></p>
   </div>
 
+  <button type="button" id="einkauf-leeren-btn" style="background-color: #e74c3c; margin-bottom: 10px;">🗑 Abgehakte leeren</button>
+
   <!-- Liste -->
   <ul id="einkauf-liste"></ul>
 </div>
@@ -191,20 +193,24 @@
       </div>
     </div>
   </div>
+</div>
 
-  <div class="bilanz-sektion">
-    <p class="bilanz-sektion-titel">Einkäufe diesen Monat</p>
-    <div class="bilanz-karten-reihe">
-      <div class="bilanz-karte einkaufe">
-        <span class="bilanz-label">Getätigt</span>
-        <span class="bilanz-wert" id="bilanz-einkaufe">0.00€</span>
+  <div id="untere-reihe">
+    <div>
+      <div class="bilanz-sektion">
+        <p class="bilanz-sektion-titel">Einkäufe diesen Monat</p>
+        <div class="bilanz-karte einkaufe" id="einkaufe-karte" style="cursor:pointer">
+          <span class="bilanz-label">Getätigt</span>
+          <span class="bilanz-wert" id="bilanz-einkaufe">0.00€</span>
+        </div>
       </div>
+      <button type="button" id="csv-export-btn" style="margin-top: 8px; font-size: 13px; padding: 7px 10px;">⬇ CSV
+        exportieren</button>
     </div>
+    <canvas id="ausgaben-chart" width="120" height="120"></canvas>
   </div>
-</div>
-  <button type="button" id="csv-export-btn">⬇ Als CSV exportieren</button>
   <ul id="posten-liste"></ul>
-</div>
+  </div>
 
 <div id="bereich-kalender">
   <h2>Kalender</h2>

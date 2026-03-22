@@ -176,10 +176,11 @@ button.loeschen {
     background-color: #2d2d2d;
     border: 1px solid #444;
     border-radius: 4px;
-    padding: 6px;
-    min-height: 48px;
-    font-size: 13px;
+    padding: 4px;
+    height: 80px;
     overflow: hidden;
+    font-size: 13px;
+    cursor: default;
 }
 
 .kalender-tag.leer {
@@ -209,10 +210,14 @@ button.loeschen {
 
 .kalender-faelligkeit {
     font-size: 10px;
-    color: #81c784;
+    color: white;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    border-radius: 3px;
+    padding: 1px 4px;
+    margin-top: 2px;
+    display: block;
 }
 
 #tag-detail {
@@ -581,6 +586,33 @@ li.einkauf-eintrag {
     margin-bottom: 16px;
     align-items: start;
 }
+
+
+/* Kalenderer Erinnerung */
+
+#erinnerung-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+#erinnerung-form input {
+    font-size: 13px;
+    padding: 6px 8px;
+}
+
+#erinnerung-form button {
+    grid-column: 1 / -1;
+    padding: 7px;
+    font-size: 13px;
+    background-color: #ff8a65;
+}
+
+#erinnerung-form button:hover {
+    background-color: #ff7043;
+}
+
 
 /* Mobile-Ansicht */
 @media (max-width: 600px) {

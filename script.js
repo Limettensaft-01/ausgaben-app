@@ -95,8 +95,10 @@ function formatIntervall(intervall, anzahl) {
 }
 
 function zeigePosten(p, index) {
-    if (p.typ === "einkauf") return; // Einkäufe nicht in der Postenliste anzeigen
+    if (p.typ === "einkauf") return;
+    if (p.typ === "erinnerung") return;
     if (p.vonEinkauf) return;
+
     const einkaufEintrag = document.createElement("li");
 
     einkaufEintrag.style.cursor = "pointer";
@@ -377,6 +379,16 @@ function alleFaelligkeitenImMonat(jahr, monat) {
         if (p.typ === "einkauf") return;
         if (p.vonEinkauf) return;
 
+        if (p.typ === "erinnerung") {
+            const d = new Date(p.datum);
+            if (d.getFullYear() === jahr && d.getMonth() === monat) {
+                const key = d.getDate();
+                if (!faelligkeiten[key]) faelligkeiten[key] = [];
+                faelligkeiten[key].push(p);
+            }
+            return;
+        }
+
         const d = new Date(p.datum);
         const ende = new Date(jahr, monat + 1, 0);
 
@@ -474,23 +486,51 @@ function bautKalender() {
             zelle.classList.add("hat-faelligkeit");
             zelle.style.cursor = "pointer";
 
-            faelligkeiten[tag].forEach(p => {
+            const kategoriefarben = {
+                wohnen: "#4fc3f7", essen: "#81c784", transport: "#ffb74d",
+                freizeit: "#ce93d8", gesundheit: "#ef9a9a", kleidung: "#80cbc4",
+                technik: "#90caf9", einnahme: "#a5d6a7", sonstiges: "#bcaaa4",
+                erinnerung: "#ff8a65"
+            };
+
+            const maxSichtbar = 2;
+            const alleEintraege = faelligkeiten[tag];
+
+            alleEintraege.slice(0, maxSichtbar).forEach(p => {
                 const label = document.createElement("div");
                 label.className = "kalender-faelligkeit";
-                label.textContent = p.name;
+                const farbe = kategoriefarben[p.kategorie || p.typ || "sonstiges"] || "#888";
+                label.style.backgroundColor = farbe;
+                label.textContent = p.typ === "erinnerung" ? "🔔 " + p.name : p.name;
                 zelle.appendChild(label);
             });
+
+            if (alleEintraege.length > maxSichtbar) {
+                const mehr = document.createElement("div");
+                mehr.style.fontSize = "9px";
+                mehr.style.color = "#888";
+                mehr.style.paddingLeft = "4px";
+                mehr.textContent = "+" + (alleEintraege.length - maxSichtbar) + " mehr";
+                zelle.appendChild(mehr);
+            }
 
             zelle.addEventListener("click", function () {
                 zeigeTagDetail(tag, monat, jahr, faelligkeiten[tag]);
             });
+        } else {
+            zelle.style.cursor = "pointer";
+            zelle.addEventListener("click", function () {
+                const datum = `${jahr}-${String(monat + 1).padStart(2, '0')}-${String(tag).padStart(2, '0')}`;
+                document.getElementById("erinnerung-datum").value = datum;
+                document.getElementById("erinnerung-titel").focus();
+                document.getElementById("erinnerung-form").scrollIntoView({ behavior: "smooth" });
+            });
         }
-
         kalender.appendChild(zelle);
     }
 }
 
-function zeigeTagDetail(tag, monat, jahr, posten) {
+function zeigeTagDetail(tag, monat, jahr, eintraege) {
     const datum = new Date(jahr, monat, tag);
     const datumText = datum.toLocaleDateString("de-DE", {
         weekday: "long", day: "numeric", month: "long", year: "numeric"
@@ -501,26 +541,41 @@ function zeigeTagDetail(tag, monat, jahr, posten) {
     const liste = document.getElementById("tag-detail-liste");
     liste.innerHTML = "";
 
-    posten.forEach(p => {
+    eintraege.forEach(p => {
         const eintrag = document.createElement("li");
 
         // Text-Teil mit textContent
         const textSpan = document.createElement("span");
-        textSpan.textContent = p.name + " — " + p.betrag + "€ — " + formatIntervall(p.intervall, p.anzahl);
+        textSpan.textContent = p.typ === "erinnerung"
+            ? "🔔 " + p.name + (p.uhrzeit ? " um " + p.uhrzeit : "") + (p.notiz ? " — " + p.notiz : "")
+            : p.name + " — " + p.betrag + "€ — " + formatIntervall(p.intervall, p.anzahl);
         eintrag.appendChild(textSpan);
 
         // Button mit onclick (hier müssen wir die Parameter escapen für das Attribut)
-        const button = document.createElement("button");
-        button.className = "kalender-hinzufuegen";
-        button.textContent = "📅 Google Calendar";
-
-        // ✅ Parameter escapen für das onclick-Attribut
-        const safeName = escapeHtml(p.name);
-        const safeBetrag = escapeHtml(p.betrag);
-        const safeDatum = `${jahr}-${String(monat + 1).padStart(2, '0')}-${String(tag).padStart(2, '0')}`;
-
-        button.setAttribute("onclick", `zuGoogleKalender('${safeName}', '${safeBetrag}', '${safeDatum}')`);
-        eintrag.appendChild(button);
+        if (p.typ === "erinnerung") {
+            const loeschenBtn = document.createElement("button");
+            loeschenBtn.textContent = "🗑 Löschen";
+            loeschenBtn.style.backgroundColor = "#e74c3c";
+            loeschenBtn.style.fontSize = "12px";
+            loeschenBtn.style.padding = "4px 10px";
+            loeschenBtn.addEventListener("click", function () {
+                const globalIndex = posten.indexOf(p);
+                if (globalIndex !== -1) posten.splice(globalIndex, 1);
+                localStorage.setItem("posten", JSON.stringify(posten));
+                document.getElementById("tag-detail").style.display = "none";
+                bautKalender();
+            });
+            eintrag.appendChild(loeschenBtn);
+        } else {
+            const button = document.createElement("button");
+            button.className = "kalender-hinzufuegen";
+            button.textContent = "📅 Google Calendar";
+            const safeName = escapeHtml(p.name);
+            const safeBetrag = escapeHtml(p.betrag);
+            const safeDatum = `${jahr}-${String(monat + 1).padStart(2, '0')}-${String(tag).padStart(2, '0')}`;
+            button.setAttribute("onclick", `zuGoogleKalender('${safeName}', '${safeBetrag}', '${safeDatum}')`);
+            eintrag.appendChild(button);
+        }
 
         liste.appendChild(eintrag);
     });
@@ -1163,4 +1218,35 @@ document.getElementById("einkauf-leeren-btn").addEventListener("click", function
         berechneGesamtsumme();
         zeichneChart();
     }
+});
+
+document.getElementById("erinnerung-btn").addEventListener("click", function () {
+    const titel = document.getElementById("erinnerung-titel").value;
+    const datum = document.getElementById("erinnerung-datum").value;
+    const uhrzeit = document.getElementById("erinnerung-uhrzeit").value;
+    const notiz = document.getElementById("erinnerung-notiz").value;
+
+    if (!titel || !datum) {
+        alert("Bitte mindestens Titel und Datum eingeben!");
+        return;
+    }
+
+    const neueErinnerung = {
+        typ: "erinnerung",
+        name: titel,
+        datum: datum,
+        uhrzeit: uhrzeit,
+        notiz: notiz,
+        intervall: "einmalig",
+        anzahl: 1
+    };
+
+    posten.push(neueErinnerung);
+    localStorage.setItem("posten", JSON.stringify(posten));
+    bautKalender();
+
+    document.getElementById("erinnerung-titel").value = "";
+    document.getElementById("erinnerung-datum").value = "";
+    document.getElementById("erinnerung-uhrzeit").value = "";
+    document.getElementById("erinnerung-notiz").value = "";
 });

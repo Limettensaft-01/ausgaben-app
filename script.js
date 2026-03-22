@@ -14,6 +14,8 @@ const form = document.getElementById("ausgaben-form");
 const liste = document.getElementById("posten-liste");
 const intervallSelect = document.getElementById("intervall");
 const anzahlContainer = document.getElementById("intervall-anzahl-container");
+let formModus = "neu";
+let bearbeitenIndex = -1; 
 
 intervallSelect.addEventListener("change", function () {
     const brauchtAnzahl = intervallSelect.value === "alle-x-monate" ||
@@ -63,11 +65,21 @@ form.addEventListener("submit", function (event) {
         anzahl: document.getElementById("intervall-anzahl").value || 1
     };
 
-    posten.push(neuerPosten);
-    sortierePosten(); // ✅ HIER HINZUFÜGEN
+    if (formModus === "bearbeiten" && bearbeitenIndex !== -1) {
+        posten[bearbeitenIndex] = neuerPosten;
+        formModus = "neu";
+        bearbeitenIndex = -1;
+        const submitBtn = document.querySelector("#ausgaben-form button[type='submit']");
+        submitBtn.textContent = "Posten hinzufügen";
+        submitBtn.style.backgroundColor = "";
+    } else {
+        posten.push(neuerPosten);
+    }
+
+    sortierePosten();
     localStorage.setItem("posten", JSON.stringify(posten));
-    liste.innerHTML = ""; // ✅ ALTE LISTE LEEREN
-    posten.forEach((p, i) => zeigePosten(p, i)); // ✅ NEU RENDERN
+    liste.innerHTML = "";
+    posten.forEach((p, i) => zeigePosten(p, i));
     berechneGesamtsumme();
     zeichneChart();
     form.reset();
@@ -876,8 +888,46 @@ function zeigeDetail(p) {
         inhalt.appendChild(karte);
     });
 
+    const bearbeitenBtn = document.createElement("button");
+    bearbeitenBtn.textContent = "✏️ Bearbeiten";
+    bearbeitenBtn.style.marginTop = "8px";
+    bearbeitenBtn.addEventListener("click", function () {
+        bearbeitePosten(p);
+    });
+    inhalt.appendChild(bearbeitenBtn);
+
     document.getElementById("detail-overlay").style.display = "block";
     document.getElementById("detail-panel").classList.add("offen");
+}
+
+function bearbeitePosten(p) {
+    document.getElementById("typ").value = p.typ;
+    document.getElementById("kategorie").value = p.kategorie || "sonstiges";
+    document.getElementById("name").value = p.name;
+    document.getElementById("betrag").value = p.betrag;
+    document.getElementById("datum").value = p.datum;
+    document.getElementById("intervall").value = p.intervall;
+    document.getElementById("intervall-anzahl").value = p.anzahl || 1;
+
+    const brauchtAnzahl = p.intervall === "alle-x-monate" || p.intervall === "alle-x-jahre";
+    document.getElementById("intervall-anzahl-container").style.display = brauchtAnzahl ? "block" : "none";
+
+    const submitBtn = document.querySelector("#ausgaben-form button[type='submit']");
+    submitBtn.textContent = "Änderungen speichern";
+    submitBtn.style.backgroundColor = "#ff9800";
+
+    formModus = "bearbeiten";
+    bearbeitenIndex = posten.indexOf(p);
+
+    schliesseDetail();
+
+    if (window.innerWidth <= 600) {
+        Object.values(bereiche).forEach(b => b.style.display = "none");
+        bereiche["erfassen"].style.display = "block";
+        tabBtns.forEach(b => b.classList.remove("aktiv"));
+        document.querySelector("[data-tab='erfassen']").classList.add("aktiv");
+    }
+    window.scrollTo(0, 0);
 }
 
 function schliesseDetail() {

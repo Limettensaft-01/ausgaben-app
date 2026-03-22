@@ -348,8 +348,14 @@ for (let j = aktuellesJahrBilanz - 2; j <= aktuellesJahrBilanz + 5; j++) {
 document.getElementById("bilanz-monat").value = new Date().getMonth();
 
 // Bei Änderung neu berechnen
-document.getElementById("bilanz-monat").addEventListener("change", berechneGesamtsumme);
-document.getElementById("bilanz-jahr").addEventListener("change", berechneGesamtsumme);
+document.getElementById("bilanz-monat").addEventListener("change", function () {
+    berechneGesamtsumme();
+    zeichneChart();
+});
+document.getElementById("bilanz-jahr").addEventListener("change", function () {
+    berechneGesamtsumme();
+    zeichneChart();
+});
 
 function alleFaelligkeitenImMonat(jahr, monat) {
     const faelligkeiten = {};
@@ -996,8 +1002,12 @@ document.getElementById("ausgaben-chart").addEventListener("click", function (e)
     const jahr = parseInt(document.getElementById("bilanz-jahr").value);
     const faelligkeiten = alleFaelligkeitenImMonat(jahr, monat);
 
-    const posten = Object.values(faelligkeiten).flat().filter(p =>
+    const allePosten = Object.values(faelligkeiten).flat().filter(p =>
         p.typ === "ausgabe" && (p.kategorie || "sonstiges") === segment.kat
+    );
+
+    const posten = allePosten.filter((p, index, self) =>
+        index === self.indexOf(p)
     );
 
     const gesamtKarte = document.createElement("div");
@@ -1025,13 +1035,13 @@ document.getElementById("ausgaben-chart").addEventListener("click", function (e)
 
 document.getElementById("einkaufe-karte").addEventListener("click", function () {
     const heute = new Date();
-    const aktuellerMonat = heute.getMonth();
-    const aktuellesJahr = heute.getFullYear();
+    const monat = parseInt(document.getElementById("bilanz-monat").value);
+    const jahr = parseInt(document.getElementById("bilanz-jahr").value);
 
     const monatsEinkaufe = posten.filter(p =>
         p.typ === "einkauf" && p.abgehakt && p.abgehaktDatum &&
-        new Date(p.abgehaktDatum).getMonth() === aktuellerMonat &&
-        new Date(p.abgehaktDatum).getFullYear() === aktuellesJahr
+        new Date(p.abgehaktDatum).getMonth() === monat &&
+        new Date(p.abgehaktDatum).getFullYear() === jahr
     );
 
     document.getElementById("detail-name").textContent = "🛒 Einkäufe diesen Monat";
